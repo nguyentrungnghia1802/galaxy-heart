@@ -289,15 +289,13 @@ describe('App core integration', () => {
     expect(harness.scheduler.size).toBe(0);
   });
 
-  it('stops gem sound immediately when gem is interacted with in GEM_IDLE', () => {
+  it('transitions to GEM_BURST when gem is interacted with in GEM_IDLE without any sounds', () => {
     const harness = createHarness();
     harness.app.start();
     harness.app.stateMachine.transitionTo('GEM_IDLE');
 
-    const spyStopGem = vi.spyOn(harness.app.soundSystem, 'stopGemSound');
     harness.app.onGemInteracted();
 
-    expect(spyStopGem).toHaveBeenCalledTimes(1);
     expect(harness.app.stateMachine.state).toBe('GEM_BURST');
     harness.app.dispose();
   });

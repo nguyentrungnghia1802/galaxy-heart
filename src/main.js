@@ -72,30 +72,6 @@ if (!isWebGLAvailable()) {
     });
   };
 
-  const soundToggleBtn = document.querySelector('#sound-toggle');
-  const soundIconOn = soundToggleBtn?.querySelector('.sound-icon-on');
-  const soundIconOff = soundToggleBtn?.querySelector('.sound-icon-off');
-
-  const updateSoundToggleUI = (isMuted) => {
-    if (!soundToggleBtn) return;
-    soundToggleBtn.classList.toggle('is-muted', isMuted);
-    soundToggleBtn.setAttribute(
-      'aria-label',
-      isMuted ? 'Bật âm thanh' : 'Tắt âm thanh',
-    );
-    soundToggleBtn.title = isMuted ? 'Bật âm thanh' : 'Tắt âm thanh';
-    if (soundIconOn) soundIconOn.hidden = isMuted;
-    if (soundIconOff) soundIconOff.hidden = !isMuted;
-  };
-
-  if (app.soundSystem) {
-    updateSoundToggleUI(app.soundSystem.isMuted());
-    soundToggleBtn?.addEventListener('click', () => {
-      const isMuted = app.soundSystem.toggleMute();
-      updateSoundToggleUI(isMuted);
-    });
-  }
-
   if (skipIntro || !introScreenEl || !openHeartBtn) {
     if (introScreenEl) {
       introScreenEl.style.display = 'none';
@@ -108,7 +84,8 @@ if (!isWebGLAvailable()) {
       if (openingStarted) return;
       openingStarted = true;
 
-      // Unlock AudioContext cleanly on user interaction
+      // Unlock AudioContext and ensure audio is active on user click
+      app.soundSystem?.setMuted(false);
       app.soundSystem?.unlock();
 
       // 1. Intro screen freezes completely for ~1 second

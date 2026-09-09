@@ -1042,7 +1042,48 @@ Chỉ đánh dấu mục này khi B07 hoàn tất:
   - Responsive mobile portrait: tự động co giãn theo tỷ lệ màn hình (từ 0.62x trên màn hình hẹp), hiển thị hoàn hảo, không tràn viền.
 - [x] **6. UI/UX Flow & Final End State:**
   - Flow trạng thái hoàn chỉnh: `BOOT` → `PRELOAD` → `INTRO` → `HEART_IDLE` → `HEARTBEAT` → `RAPID_HEARTBEAT` → `TENSION` → `EXPLOSION` → `PETAL_FLIGHT` → `GEM_IDLE` → `USER CLICK GEM` → `GEM_BURST` → `LOVE_REVEAL` → `END`.
-  - Trạng thái cuối vĩnh cửu: không nút restart, không reload trang, cánh hoa trôi bềnh bồng, ngọc pha lê lấp lánh, dòng chữ "I love you!" bồng bềnh thở nhẹ đầy cảm xúc.
+  - Trạng thái cuối vĩnh cửu: không nút restart, không reload trang, cánh hoa trôi bềnh bồng, dòng chữ "I love you!" bồng bềnh thở nhẹ đầy cảm xúc ở trung tâm khung hình.
+
+---
+
+# PHASE D — VISUAL POLISH & GITHUB PAGES CI/CD DEPLOYMENT
+
+**Mục tiêu:** Tinh chỉnh độ chói của gem và love text xuống khoảng 40%, thu nhỏ gem xuống 60%, cập nhật interaction flow: click gem → hiệu ứng activation → gem biến mất hoàn toàn → "I love you!" xuất hiện tại trung tâm màn hình. Xây dựng pipeline tự động hóa CI/CD deploy static site lên GitHub Pages qua GitHub Actions.
+
+### Checklist hoàn thành
+
+- [x] **1. Giảm độ chói của Gem (~40% hiện tại):**
+  - Giảm emissiveIntensity xuống 0.28 (base) và 0.40–0.53 khi hover.
+  - Thay lõi MeshBasicMaterial trắng chói bằng MeshPhysicalMaterial hồng đào ngọc bích mềm mại (`0xff9cb8`, emissive `0x5a081a`, opacity 0.88).
+  - Giảm PointLight nội tại từ 3.2 xuống 1.15, bán kính chiếu 3.5m êm dịu, không cháy sáng các cánh hoa xung quanh.
+  - Giảm halo opacity từ 0.45 xuống 0.16, đường kính halo thu nhỏ vừa vặn quanh các mặt vát ngọc.
+  - Giảm kích thước và độ chói của các hạt sao firefly lơ lửng quanh ngọc (size 0.09, opacity 0.48).
+  - Các mặt vát bipyramid diamond hiển thị rõ ràng, khúc xạ ánh sáng lấp lánh tinh tế.
+- [x] **2. Giảm kích thước Gem (khoảng 60% hiện tại):**
+  - Lõi ngọc thu nhỏ từ bán kính 0.14 xuống 0.084 (60%).
+  - Khối ngọc vát ngoài thu nhỏ từ 0.26 xuống 0.156 (60%).
+  - Giữ nguyên hit target cầu ẩn bán kính 0.48 đảm bảo click/tap trên desktop và mobile cực kỳ dễ dàng.
+  - Vị trí focus tâm scene `(0, 0.05, 0)` hoàn toàn bảo toàn.
+- [x] **3. Flow: Click Gem → Activation → Gem Biến Mất → Love Text Reveal:**
+  - Ngay khi click/tap: Gem phản hồi tức thì với xung ánh sáng activation mềm mại và hiệu ứng GemBurst thanh lịch (vòng sóng mở rộng từ từ, cánh hoa nhỏ xoay tản, bụi sao lấp lánh).
+  - Trong quá trình `GEM_BURST`, gem tự động thu nhỏ (shrink) và tan biến (dissolve) êm dịu, ẩn hoàn toàn (`visible = false`, light = 0, hitMesh = false).
+  - Khi chuyển sang `LOVE_REVEAL` và `END`: Gem không còn tồn tại trong scene.
+- [x] **4. Giảm độ chói của Love Text ("I love you!") & Đặt tại trung tâm:**
+  - Giảm emissiveIntensity mặt trước xuống 0.16 (base) và các cạnh viền xuống 0.32, không còn bị UnrealBloomPass làm nhòe thành khối trắng/hồng cháy sáng.
+  - Đọc rõ từng nét chữ 3D vát cạnh thanh nhã, mặt trước giữ sắc nhung ngọc trai ấm áp, viền giữ sắc ruby rose sâu thẳm.
+  - Đèn chiếu chữ point light giảm cường độ xuống 1.12.
+  - Tọa độ nghỉ đặt tại tâm mắt nhìn `(0, 0.08, 0.20)`, thay thế hoàn hảo vị trí gem đã biến mất, trở thành visual focus duy nhất ở trung tâm.
+- [x] **5. Cấu hình Vite Base Path cho GitHub Pages:**
+  - Hỗ trợ base dynamic: `/galaxy-heart/` khi chạy trong GitHub Actions / CI hoặc biến `GITHUB_PAGES=true`, và `./` khi dev/preview cục bộ.
+  - Petal texture load qua `${import.meta.env.BASE_URL}assets/textures/petal.webp` chống triệt để lỗi 404 khi host dưới subpath repo.
+  - Fallback image trong HTML chuyển thành đường dẫn tương đối `./assets/fallback/heart-fallback.webp`.
+- [x] **6. GitHub Actions Workflow (.github/workflows/deploy-pages.yml):**
+  - Tự động trigger khi push vào `main`, hỗ trợ chạy thủ công (`workflow_dispatch`).
+  - Permissions tối thiểu chuẩn: `contents: read`, `pages: write`, `id-token: write`.
+  - Concurrency group `pages` an toàn, tránh chồng chéo deployment.
+  - Build gate đầy đủ: `checkout` → `setup-node (v20)` → `npm ci` → `npm test` → `npm run build` → `upload-pages-artifact` → `deploy-pages`.
+  - Tài liệu deployment chi tiết tại `README.md` và `petal-heart-web-docs/11-deployment-static-hosting.md`.
+
 
 
 

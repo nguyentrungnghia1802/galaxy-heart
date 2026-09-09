@@ -882,33 +882,33 @@ git commit -m "perf: tune responsive rendering and mobile quality"
 
 ### Checklist kỹ thuật
 
-- [ ] Chạy `npm test` và đảm bảo PASS.
-- [ ] Chạy `npm run build` và đảm bảo PASS.
-- [ ] Chạy production preview và kiểm tra asset paths.
-- [ ] Không có uncaught console error.
-- [ ] Không có asset 404.
-- [ ] Không có WebGL warning nghiêm trọng trong normal path.
-- [ ] Replay 10 lần.
-- [ ] Tab hide/resume test.
-- [ ] Resize/orientation test.
-- [ ] Reduced-motion test.
+- [x] Chạy `npm test` và đảm bảo PASS.
+- [x] Chạy `npm run build` và đảm bảo PASS.
+- [x] Chạy production preview và kiểm tra asset paths.
+- [x] Không có uncaught console error.
+- [x] Không có asset 404.
+- [x] Không có WebGL warning nghiêm trọng trong normal path.
+- [x] Replay 10 lần.
+- [x] Tab hide/resume test.
+- [x] Resize/orientation test.
+- [x] Reduced-motion test.
 
 ### Checklist visual theo `12-acceptance-criteria.md`
 
-- [ ] AC-01 3D credibility.
-- [ ] AC-02 petal identity continuity.
-- [ ] AC-03 double-pulse readability.
-- [ ] AC-04 acceleration rõ.
-- [ ] AC-05 explosion impact < 1 giây.
-- [ ] AC-06 flight naturalness.
-- [ ] AC-07 foreground depth.
-- [ ] AC-08 adaptive performance.
-- [ ] AC-09 mobile safe layout.
-- [ ] AC-10 replay stability.
-- [ ] AC-11 visibility safety.
-- [ ] AC-12 error-free normal path.
-- [ ] AC-13 reduced motion.
-- [ ] AC-14 static build.
+- [x] AC-01 3D credibility.
+- [x] AC-02 petal identity continuity.
+- [x] AC-03 double-pulse readability.
+- [x] AC-04 acceleration rõ.
+- [x] AC-05 explosion impact < 1 giây.
+- [x] AC-06 flight naturalness.
+- [x] AC-07 foreground depth.
+- [x] AC-08 adaptive performance.
+- [x] AC-09 mobile safe layout.
+- [x] AC-10 replay stability.
+- [x] AC-11 visibility safety.
+- [x] AC-12 error-free normal path.
+- [x] AC-13 reduced motion.
+- [x] AC-14 static build.
 
 ### Done when
 
@@ -970,4 +970,5 @@ của prompt hiện tại, push origin main theo agent.md.
 
 Chỉ đánh dấu mục này khi B07 hoàn tất:
 
-- [ ] **PETAL HEART 3D V1 COMPLETE**
+- [x] **PETAL HEART 3D V1 COMPLETE**
+

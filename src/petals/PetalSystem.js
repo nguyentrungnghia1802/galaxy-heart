@@ -10,15 +10,18 @@ import {
 
 const LOCAL_PETAL_NORMAL = new THREE.Vector3(0, 0, 1);
 const PETAL_UNIT_SCALE = 0.2;
+const TAU = Math.PI * 2;
 const DEFAULT_PALETTE = Object.freeze([
-  0x5a0314, // deep velvet wine crevice
-  0x78041c, // rich dark burgundy
-  0x9e0828, // deep crimson rose
-  0xba0c34, // classic ruby red
-  0xd81442, // vivid scarlet rose
-  0xeb1d4e, // bright rose petal
-  0xf53366, // radiant coral highlight
-  0xff5983, // luminous blush edge
+  0x6e051c, // deep velvet crevice burgundy
+  0x870725, // rich dark wine
+  0xa5082e, // deep ruby red
+  0xc60c38, // radiant crimson rose
+  0xdf1346, // vivid scarlet rose
+  0xef1c52, // bright rose petal
+  0xfb2b67, // vibrant hot pink
+  0xff487e, // glowing rose highlight
+  0xff6d98, // luminous soft blush
+  0xff9cb8, // delicate light petal edge
 ]);
 const ATTACHED_STATES = new Set([
   'BOOT',
@@ -38,17 +41,19 @@ export class PetalSystem {
     texture = null,
     palette = DEFAULT_PALETTE,
     seed = 0x50455441,
+    flutterEnabled = true,
   }) {
     this.count = count;
     this.palette = palette;
     this.seed = seed;
+    this.flutterEnabled = flutterEnabled;
     this.buffers = new PetalBuffers(count);
     this.geometry = geometry ?? createPetalGeometry();
     this.material =
       material ??
       new THREE.MeshStandardMaterial({
         color: 0xffffff,
-        roughness: 0.52,
+        roughness: 0.42,
         metalness: 0.04,
         side: THREE.DoubleSide,
         vertexColors: true,
@@ -69,15 +74,18 @@ export class PetalSystem {
     this.tempNormal = new THREE.Vector3();
     this.tempQuaternion = new THREE.Quaternion();
     this.tempTwistQuaternion = new THREE.Quaternion();
+    this.tempEuler = new THREE.Euler();
     this.tempScale = new THREE.Vector3();
     this.tempMatrix = new THREE.Matrix4();
     this.tempColor = new THREE.Color();
+    this.anchors = null;
     this.attached = false;
     this.disposed = false;
     this.mode = 'attached';
     this.previousState = null;
     this.explosionCount = 0;
     this.flightTime = 0;
+    this.attachedTime = 0;
     this.currentGlobalScale = 1;
     this.flightScale = 1;
   }
@@ -89,6 +97,7 @@ export class PetalSystem {
       );
     }
 
+    this.anchors = anchorData;
     this.buffers.copyAnchors(anchorData);
 
     for (let index = 0; index < this.count; index += 1) {
@@ -116,9 +125,13 @@ export class PetalSystem {
       this.buffers.baseRotation[rotationOffset + 2] = this.tempQuaternion.z;
       this.buffers.baseRotation[rotationOffset + 3] = this.tempQuaternion.w;
 
-      const color = this.palette[
-        this.buffers.colorVariant[index] % this.palette.length
-      ];
+      // Sample deterministically across full rich palette using colorVariant and noiseSeed
+      const variant = this.buffers.colorVariant[index];
+      const paletteOffset = Math.floor(
+        (anchorData[index].noiseSeed ?? 0) * this.palette.length,
+      );
+      const paletteIndex = (variant + paletteOffset) % this.palette.length;
+      const color = this.palette[paletteIndex];
       this.tempColor.setHex(color);
       this.mesh.setColorAt(index, this.tempColor);
     }
@@ -129,6 +142,7 @@ export class PetalSystem {
     this.previousState = null;
     this.explosionCount = 0;
     this.flightTime = 0;
+    this.attachedTime = 0;
     this.currentGlobalScale = 1;
     this.flightScale = 1;
     if (this.mesh.instanceColor) {
@@ -137,24 +151,97 @@ export class PetalSystem {
     this.updateAttachedTransforms(1);
   }
 
-  updateAttachedTransforms(globalScale) {
+  updateAttachedTransforms(globalScale, stateSnapshot) {
     this.currentGlobalScale = globalScale;
+    const time = this.attachedTime;
+    const intensity = Math.min(2.5, stateSnapshot?.heartbeatIntensity ?? 0);
+
     for (let index = 0; index < this.count; index += 1) {
       const vectorOffset = index * 3;
       const rotationOffset = index * 4;
-      const x = this.buffers.anchorPosition[vectorOffset] * globalScale;
-      const y = this.buffers.anchorPosition[vectorOffset + 1] * globalScale;
-      const z = this.buffers.anchorPosition[vectorOffset + 2] * globalScale;
+      const anchor = this.anchors ? this.anchors[index] : null;
+      const isAmbient = Boolean(anchor?.isAmbient);
 
-      this.buffers.position[vectorOffset] = x;
-      this.buffers.position[vectorOffset + 1] = y;
-      this.buffers.position[vectorOffset + 2] = z;
-      this.tempPosition.set(x, y, z);
-      this.tempQuaternion.fromArray(this.buffers.rotation, rotationOffset);
+      if (!isAmbient) {
+        // Core attached heart petals: keep anchor position exact for test invariants
+        const x = this.buffers.anchorPosition[vectorOffset] * globalScale;
+        const y = this.buffers.anchorPosition[vectorOffset + 1] * globalScale;
+        const z = this.buffers.anchorPosition[vectorOffset + 2] * globalScale;
 
-      const scale =
-        this.buffers.baseScale[index] * PETAL_UNIT_SCALE * globalScale;
-      this.tempScale.setScalar(scale);
+        this.buffers.position[vectorOffset] = x;
+        this.buffers.position[vectorOffset + 1] = y;
+        this.buffers.position[vectorOffset + 2] = z;
+        this.tempPosition.set(x, y, z);
+        this.tempQuaternion.fromArray(this.buffers.rotation, rotationOffset);
+
+        // Organic micro-motion: subtle leaf flutter around normal synchronized to heart rhythm
+        if (this.flutterEnabled && time > 0) {
+          const noiseSeed = this.buffers.noiseSeed[index];
+          const flutterSpeed = 2.8 + noiseSeed * 1.6;
+          const flutterAmp = 0.032 + intensity * 0.045;
+          const flutterAngle =
+            Math.sin(time * flutterSpeed + noiseSeed * TAU) * flutterAmp;
+          this.tempNormal.set(
+            this.buffers.anchorNormal[vectorOffset],
+            this.buffers.anchorNormal[vectorOffset + 1],
+            this.buffers.anchorNormal[vectorOffset + 2],
+          );
+          this.tempTwistQuaternion.setFromAxisAngle(
+            this.tempNormal,
+            flutterAngle,
+          );
+          this.tempQuaternion.multiply(this.tempTwistQuaternion);
+        }
+
+        const scale =
+          this.buffers.baseScale[index] * PETAL_UNIT_SCALE * globalScale;
+        this.tempScale.setScalar(scale);
+      } else {
+        // Ambient floating petals: gentle 3D harmonic drift around heart
+        const seed = this.buffers.noiseSeed[index];
+        const speed = anchor.ambientSpeed ?? 0.8;
+        const phase = anchor.ambientPhase ?? 0;
+        const radius = anchor.ambientRadius ?? 0.12;
+
+        const driftX = Math.sin(time * speed + phase) * radius;
+        const driftY =
+          Math.cos(time * speed * 0.8 + phase * 1.3) * radius +
+          Math.sin(time * 0.4 + phase) * 0.04;
+        const driftZ =
+          Math.sin(time * speed * 0.6 + phase * 0.7) * (radius * 0.8);
+
+        const ax =
+          this.buffers.anchorPosition[vectorOffset] * globalScale + driftX;
+        const ay =
+          this.buffers.anchorPosition[vectorOffset + 1] * globalScale + driftY;
+        const az =
+          this.buffers.anchorPosition[vectorOffset + 2] * globalScale + driftZ;
+
+        this.buffers.position[vectorOffset] = ax;
+        this.buffers.position[vectorOffset + 1] = ay;
+        this.buffers.position[vectorOffset + 2] = az;
+        this.tempPosition.set(ax, ay, az);
+        this.tempQuaternion.fromArray(this.buffers.rotation, rotationOffset);
+
+        // Slow gentle tumbling in space
+        const tumbleSpeed = 0.4 + seed * 0.5;
+        const tumbleX = Math.sin(time * tumbleSpeed + phase) * 0.22;
+        const tumbleY = Math.cos(time * tumbleSpeed * 0.7 + phase) * 0.22;
+        const tumbleZ = Math.sin(time * tumbleSpeed * 0.4 + phase) * 0.22;
+        this.tempEuler.set(tumbleX, tumbleY, tumbleZ);
+        this.tempTwistQuaternion.setFromEuler(this.tempEuler);
+        this.tempQuaternion.multiply(this.tempTwistQuaternion);
+
+        // Foreground bokeh petals scaled slightly larger for depth
+        const scaleMult = anchor.isForeground ? 1.45 : 1.0;
+        const scale =
+          this.buffers.baseScale[index] *
+          PETAL_UNIT_SCALE *
+          globalScale *
+          scaleMult;
+        this.tempScale.setScalar(scale);
+      }
+
       this.tempMatrix.compose(
         this.tempPosition,
         this.tempQuaternion,
@@ -186,7 +273,11 @@ export class PetalSystem {
     const state = stateSnapshot?.state ?? 'BOOT';
 
     if (ATTACHED_STATES.has(state)) {
-      this.updateAttachedTransforms(stateSnapshot?.heartScale ?? 1);
+      this.attachedTime += dt;
+      this.updateAttachedTransforms(
+        stateSnapshot?.heartScale ?? 1,
+        stateSnapshot,
+      );
     } else if (state === 'EXPLOSION' || state === 'PETAL_FLIGHT') {
       if (this.explosionCount === 0) {
         this.triggerExplosion(stateSnapshot?.explosionParams);
@@ -232,7 +323,7 @@ export class PetalSystem {
     }
     this.material.map = texture;
     this.material.roughnessMap = texture;
-    this.material.alphaTest = 0.08;
+    this.material.alphaTest = 0.05;
     this.material.transparent = true;
     this.material.depthWrite = true;
     this.material.needsUpdate = true;
@@ -248,6 +339,7 @@ export class PetalSystem {
     this.previousState = null;
     this.explosionCount = 0;
     this.flightTime = 0;
+    this.attachedTime = 0;
     this.currentGlobalScale = 1;
     this.flightScale = 1;
     this.updateAttachedTransforms(1);

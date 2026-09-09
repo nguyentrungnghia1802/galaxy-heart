@@ -769,14 +769,14 @@ src/scene/CameraSystem.js
 
 ### Checklist
 
-- [ ] Pointer/touch normalized input.
-- [ ] Parallax nhỏ, có smoothing/spring/easing.
-- [ ] Không follow cursor 1:1.
-- [ ] TENSION có dolly-in vài phần trăm.
-- [ ] Explosion có shake ngắn, amplitude thấp.
-- [ ] `prefers-reduced-motion` giảm mạnh parallax/shake/dolly.
-- [ ] Mobile touch không block scroll/event ngoài ý muốn; page bản thân không cần scroll.
-- [ ] Reset/replay trả camera về transform chuẩn.
+- [x] Pointer/touch normalized input.
+- [x] Parallax nhỏ, có smoothing/spring/easing.
+- [x] Không follow cursor 1:1.
+- [x] TENSION có dolly-in vài phần trăm.
+- [x] Explosion có shake ngắn, amplitude thấp.
+- [x] `prefers-reduced-motion` giảm mạnh parallax/shake/dolly.
+- [x] Mobile touch không block scroll/event ngoài ý muốn; page bản thân không cần scroll.
+- [x] Reset/replay trả camera về transform chuẩn.
 
 ### Done when
 

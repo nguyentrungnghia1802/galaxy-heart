@@ -45,6 +45,39 @@ describe('CameraSystem', () => {
     system.update(0.016, { state: 'TENSION', progress: 0.8 });
     expect(system.dollyOffsetZ).toBeLessThan(0);
   });
+
+  it('triggers camera shake on explosion and respects reduced motion', () => {
+    const cameraNormal = new THREE.PerspectiveCamera(46, 1, 0.1, 100);
+    const systemNormal = new CameraSystem(cameraNormal);
+
+    systemNormal.update(0.016, { state: 'EXPLOSION', progress: 0.02 });
+    expect(systemNormal.shakeIntensity).toBeGreaterThan(0);
+
+    const cameraReduced = new THREE.PerspectiveCamera(46, 1, 0.1, 100);
+    const mockWindow = {
+      matchMedia: (query) => ({
+        matches: query.includes('reduce'),
+        addEventListener: () => {},
+      }),
+    };
+    const systemReduced = new CameraSystem(cameraReduced, {
+      windowTarget: mockWindow,
+    });
+
+    expect(systemReduced.reducedMotion).toBe(true);
+    systemReduced.update(0.016, { state: 'EXPLOSION', progress: 0.02 });
+    expect(systemReduced.shakeIntensity).toBe(0);
+
+    // Parallax motion scale should be dampened (0.15x)
+    systemNormal.onPointer(1, 1);
+    systemNormal.update(0.016, { state: 'HEARTBEAT' });
+    systemReduced.onPointer(1, 1);
+    systemReduced.update(0.016, { state: 'HEARTBEAT' });
+
+    expect(Math.abs(systemReduced.parallaxOffset.x)).toBeLessThan(
+      Math.abs(systemNormal.parallaxOffset.x),
+    );
+  });
 });
 
 describe('LightingSystem', () => {

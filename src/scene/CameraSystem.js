@@ -37,6 +37,11 @@ export class CameraSystem {
         '(prefers-reduced-motion: reduce)',
       );
       this.reducedMotion = Boolean(query?.matches);
+      if (query?.addEventListener) {
+        query.addEventListener('change', (e) => {
+          this.reducedMotion = Boolean(e.matches);
+        });
+      }
     } catch {
       this.reducedMotion = false;
     }

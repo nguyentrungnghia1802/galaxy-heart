@@ -99,6 +99,7 @@ export class App {
     this.handleStateExit = this.handleStateExit.bind(this);
     this.handleResize = this.handleResize.bind(this);
     this.handlePointerMove = this.handlePointerMove.bind(this);
+    this.handleTouchMove = this.handleTouchMove.bind(this);
     this.handleReplay = this.handleReplay.bind(this);
     this.renderFrame = this.renderFrame.bind(this);
     this.handlePause = this.handlePause.bind(this);
@@ -134,6 +135,16 @@ export class App {
     this.cameraSystem?.onPointer(nx, ny);
   }
 
+  handleTouchMove(event) {
+    if (!event?.touches || event.touches.length === 0) return;
+    const touch = event.touches[0];
+    const width = this.windowTarget?.innerWidth || 1;
+    const height = this.windowTarget?.innerHeight || 1;
+    const nx = (touch.clientX / width) * 2 - 1;
+    const ny = (touch.clientY / height) * 2 - 1;
+    this.cameraSystem?.onPointer(nx, ny);
+  }
+
   start() {
     if (this.running || this.disposed) {
       return;
@@ -142,6 +153,9 @@ export class App {
     if (!this.lifecycleStarted) {
       this.windowTarget.addEventListener?.('resize', this.handleResize);
       this.windowTarget.addEventListener?.('pointermove', this.handlePointerMove, {
+        passive: true,
+      });
+      this.windowTarget.addEventListener?.('touchmove', this.handleTouchMove, {
         passive: true,
       });
       this.replayButton?.addEventListener?.('click', this.handleReplay);
@@ -332,6 +346,7 @@ export class App {
       this.visibilityClock.stop();
       this.windowTarget.removeEventListener?.('resize', this.handleResize);
       this.windowTarget.removeEventListener?.('pointermove', this.handlePointerMove);
+      this.windowTarget.removeEventListener?.('touchmove', this.handleTouchMove);
       this.replayButton?.removeEventListener?.('click', this.handleReplay);
     }
     this.petalSystem.dispose();

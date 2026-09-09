@@ -301,7 +301,7 @@ noiseSeed
 ### Verification notes
 
 - 2026-09-09, local Node.js init benchmark: 1,500 = 4.22 ms; 3,000 = 4.63 ms; 6,000 = 3.87 ms (single-run values, subject to JIT variance).
-- `?debugAnchors` renders the packed anchors as rotating `THREE.Points`; front view confirms the heart silhouette and the rotated view confirms real depth/occlusion.
+- `createHeartDebugPositions()` was rendered as rotating `THREE.Points` during A04 verification; front view confirmed the heart silhouette and the rotated view confirmed real depth/occlusion.
 
 ### Done when
 
@@ -559,17 +559,23 @@ clock tick
 
 ### Checklist
 
-- [ ] App bootstrap và preload flow tối giản hoạt động.
-- [ ] Renderer resize đúng viewport và camera aspect không méo.
-- [ ] Render loop có pause/resume safe.
-- [ ] StateMachine là nguồn timeline duy nhất.
-- [ ] TENSION và EXPLOSION event được dispatch đúng một lần.
-- [ ] Core chạy từ INTRO → END không uncaught exception.
-- [ ] Replay không reload page.
-- [ ] Benchmark desktop với profile medium/high.
-- [ ] Chạy `npm test`.
-- [ ] Chạy `npm run build`.
-- [ ] Kiểm tra console không có WebGL warning nghiêm trọng.
+- [x] App bootstrap và preload flow tối giản hoạt động.
+- [x] Renderer resize đúng viewport và camera aspect không méo.
+- [x] Render loop có pause/resume safe.
+- [x] StateMachine là nguồn timeline duy nhất.
+- [x] TENSION và EXPLOSION event được dispatch đúng một lần.
+- [x] Core chạy từ INTRO → END không uncaught exception.
+- [x] Replay không reload page.
+- [x] Benchmark desktop với profile medium/high.
+- [x] Chạy `npm test`.
+- [x] Chạy `npm run build`.
+- [x] Kiểm tra console không có WebGL warning nghiêm trọng.
+
+### Verification notes
+
+- Browser end-to-end: medium = 3,200 instances / 1 draw call / ~143.9 FPS; high = 6,000 instances / 1 draw call / ~143.7 FPS in the Codex in-app browser (not VSync-limited).
+- Browser replay ran 10 consecutive times with one canvas, stable instance count, and exactly one explosion per run.
+- Portrait 390×844 and landscape 844×390 canvas ratios matched viewport ratios with no overflow; the browser backend could not surface `document.hidden`, so visibility safety is covered by the real App/VisibilityClock integration test with a simulated event target.
 
 ### Done when
 

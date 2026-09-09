@@ -17,6 +17,10 @@ body,
   overflow: hidden;
 }
 
+#app {
+  position: relative;
+}
+
 body {
   background: radial-gradient(circle at 50% 48%, #24030d 0%, #080104 58%, #030102 100%);
 }
@@ -25,4 +29,40 @@ canvas {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.status,
+.replay {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ffd8e2;
+}
+
+.status {
+  bottom: 8%;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.replay {
+  bottom: 9%;
+  padding: 0.65rem 1.25rem;
+  border: 1px solid rgb(255 151 177 / 65%);
+  border-radius: 999px;
+  background: rgb(45 3 17 / 72%);
+  font: inherit;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.replay:focus-visible {
+  outline: 2px solid #ff9ab4;
+  outline-offset: 3px;
 }

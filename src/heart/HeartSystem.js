@@ -48,7 +48,21 @@ export class HeartSystem {
       this.intensity = getHeartbeatIntensity({ state, progress, pulse });
     } else if (state === 'TENSION') {
       this.phase = 0;
-      this.globalScale = lerp(1.1, 1.14, progress);
+      // Flow: slow heartbeat -> faster -> rapid -> tension -> final strong beat -> explosion
+      // Stage 1 (0.0 -> 0.4): Tension compression & coiling potential energy
+      // Stage 2 (0.4 -> 1.0): Final massive diastolic surge peak right into explosion
+      let tensionScale = 1;
+      if (progress < 0.4) {
+        const p = progress / 0.4;
+        tensionScale = lerp(1.09, 1.04, easeInCubic(p));
+      } else {
+        const p = (progress - 0.4) / 0.6;
+        const peakT = Math.sin(p * Math.PI * 0.5);
+        tensionScale = lerp(1.04, 1.22, peakT);
+      }
+      // Micro-tremor tension vibration increasing as pressure builds
+      const tremor = Math.sin(progress * 55) * 0.007 * progress;
+      this.globalScale = tensionScale + tremor;
       this.intensity = getHeartbeatIntensity({ state, progress });
     } else {
       this.phase = 0;

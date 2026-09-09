@@ -42,10 +42,15 @@ export function getHeartbeatIntensity(stateSnapshot) {
     return pulse * lerp(1, 1.75, progress) + progress * 0.25;
   }
   if (state === 'TENSION') {
-    return lerp(1.25, 1.7, progress);
+    // Flow: tension compression -> final strong beat crescendo
+    if (progress < 0.4) {
+      return lerp(1.25, 1.75, progress / 0.4);
+    }
+    const beatP = (progress - 0.4) / 0.6;
+    return lerp(1.75, 3.2, beatP);
   }
   if (state === 'EXPLOSION') {
-    return 2;
+    return lerp(3.2, 1.0, progress);
   }
   return 0;
 }

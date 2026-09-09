@@ -67,9 +67,16 @@ export class LightingSystem {
     this.lobeLight.intensity = this.baseLobeIntensity + pulseFactor * 0.6;
 
     if (state === 'TENSION') {
-      // Light draws inward slightly before the release
-      const tensionPull = 1 - progress * 0.2;
-      this.innerLight.intensity *= tensionPull;
+      // In early tension (compression), light pulls inward; in final beat, light surges with radiant core brilliance
+      if (progress < 0.4) {
+        const tensionPull = 1 - (progress / 0.4) * 0.15;
+        this.innerLight.intensity *= tensionPull;
+      } else {
+        const surge = (progress - 0.4) / 0.6;
+        this.innerLight.intensity += surge * 4.5;
+        this.keyLight.intensity += surge * 1.8;
+        this.groundLight.intensity += surge * 2.2;
+      }
     } else if (state === 'EXPLOSION') {
       // Crisp initial impact flash decaying over 0.4s
       const flash = Math.max(0, 1 - progress * 2.5);

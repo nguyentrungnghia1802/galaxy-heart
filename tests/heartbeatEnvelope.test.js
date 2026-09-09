@@ -65,6 +65,20 @@ describe('HeartSystem', () => {
     expect(heart.getIntensity()).not.toBe(heart.getGlobalScale());
   });
 
+  it('progresses through tension compression and surges into a final strong beat before explosion', () => {
+    const heart = new HeartSystem();
+    // Early tension: compression & coiling
+    heart.update(0.01, { state: 'TENSION', progress: 0.35 });
+    const compressionScale = heart.getGlobalScale();
+    expect(compressionScale).toBeLessThan(1.08);
+
+    // Late tension: final massive strong diastolic beat
+    heart.update(0.01, { state: 'TENSION', progress: 0.95 });
+    const finalBeatScale = heart.getGlobalScale();
+    expect(finalBeatScale).toBeGreaterThan(1.2);
+    expect(heart.getIntensity()).toBeGreaterThan(3.0);
+  });
+
   it('reset clears phase, scale, intensity, and previous state', () => {
     const heart = new HeartSystem();
     heart.update(0.1, { state: 'RAPID_HEARTBEAT', progress: 0.8 });
@@ -76,3 +90,4 @@ describe('HeartSystem', () => {
     expect(heart.previousState).toBe(null);
   });
 });
+

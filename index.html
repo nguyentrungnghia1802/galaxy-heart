@@ -2,15 +2,59 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#080104" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta name="theme-color" content="#060103" />
+    <meta
+      name="description"
+      content="Petal Heart 3D — An interactive cinematic 3D heart formed by thousands of organic flower petals with accelerating heartbeat and explosion physics."
+    />
     <title>Petal Heart 3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <main id="app">
-      <div id="loading" class="status" role="status">Preparing petals…</div>
-      <button id="replay" class="replay" type="button" hidden>Replay</button>
+      <div id="loading" class="status-overlay" role="status" aria-live="polite">
+        <div class="loader-pulse"></div>
+        <span class="loader-text">Preparing petals…</span>
+      </div>
+      <button id="replay" class="replay-button" type="button" hidden aria-label="Replay experience">
+        <svg
+          class="replay-icon"
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M1 4v6h6" />
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+        </svg>
+        <span>Replay</span>
+      </button>
+      <div id="fallback" class="fallback-overlay" hidden>
+        <div class="fallback-card">
+          <img
+            class="fallback-image"
+            src="/assets/fallback/heart-fallback.webp"
+            alt="3D Petal Heart preview"
+          />
+          <h1 class="fallback-title">Petal Heart 3D</h1>
+          <p class="fallback-desc">
+            WebGL acceleration is unavailable on this device. Experience the visual preview above.
+          </p>
+        </div>
+      </div>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
+

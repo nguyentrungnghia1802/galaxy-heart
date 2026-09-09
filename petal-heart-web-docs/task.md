@@ -812,15 +812,15 @@ public/assets/fallback/heart-fallback.webp
 
 ### Checklist
 
-- [ ] Loader tối giản trong PRELOAD.
-- [ ] Khi assets load xong mới bắt đầu INTRO.
-- [ ] END hiện nút `Replay` tối giản.
-- [ ] Replay gọi core reset, không reload `window.location`.
-- [ ] Canvas `width/height` theo viewport và không có scrollbar ngoài ý muốn.
-- [ ] Xử lý `resize`/orientation và camera aspect đúng.
-- [ ] Nếu WebGL init fail, hiện fallback image/gradient đẹp + thông báo ngắn.
-- [ ] UI không che heart trên mobile.
-- [ ] Không thêm UI framework.
+- [x] Loader tối giản trong PRELOAD.
+- [x] Khi assets load xong mới bắt đầu INTRO.
+- [x] END hiện nút `Replay` tối giản.
+- [x] Replay gọi core reset, không reload `window.location`.
+- [x] Canvas `width/height` theo viewport và không có scrollbar ngoài ý muốn.
+- [x] Xử lý `resize`/orientation và camera aspect đúng.
+- [x] Nếu WebGL init fail, hiện fallback image/gradient đẹp + thông báo ngắn.
+- [x] UI không che heart trên mobile.
+- [x] Không thêm UI framework.
 
 ### Done when
 

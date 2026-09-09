@@ -152,46 +152,46 @@ export function createHeartAnchors({ count, seed }) {
       layer = 'core';
     }
 
-    const longitudeStrata = Math.ceil(Math.sqrt(localCount * 2));
-    const latitudeStrata = Math.ceil(localCount / longitudeStrata);
-    const longitudeCell = localIndex % longitudeStrata;
-    const latitudeCell = Math.floor(localIndex / longitudeStrata);
-    const longitudeFraction =
-      (longitudeCell + random()) / longitudeStrata;
-    const latitudeFraction = (latitudeCell + random()) / latitudeStrata;
-    const angle = angleAtArcFraction(longitudeFraction);
+    const GOLDEN_RATIO_STEP = 0.3819660112501051; // (3 - sqrt(5)) / 2
     let radiusFactor;
     let sample;
 
     if (layer === 'shell') {
-      const latitudeSin = latitudeFraction * 2 - 1;
-      radiusFactor = 0.95 + random() * 0.07;
+      const progress = (localIndex + 0.5) / localCount;
+      const latitudeSin = (1 - 2 * progress) * 0.98;
+      const longitudeFraction =
+        ((localIndex * GOLDEN_RATIO_STEP + (random() - 0.5) * 0.04) % 1 + 1) % 1;
+      const angle = angleAtArcFraction(longitudeFraction);
+      radiusFactor = 0.96 + random() * 0.06;
+      sample = createSurfaceSample(angle, latitudeSin, radiusFactor);
+    } else if (layer === 'canopy') {
+      const progress = (localIndex + 0.5) / localCount;
+      const longitudeFraction =
+        ((localIndex * GOLDEN_RATIO_STEP + 0.33 + (random() - 0.5) * 0.06) % 1 + 1) % 1;
+      const angle = angleAtArcFraction(longitudeFraction);
+      // 82% front-facing for lush, voluptuous floral volume toward camera
+      const isFront = random() < 0.82;
+      const latitudeSin = isFront
+        ? 0.25 + random() * 0.73
+        : -(0.10 + random() * 0.85);
+      radiusFactor = 0.65 + random() * 0.29;
       sample = createSurfaceSample(angle, latitudeSin, radiusFactor);
     } else {
-      const maxRadius = layer === 'canopy' ? 0.94 : 0.78;
-      const minRadius = layer === 'canopy' ? 0.08 : 0.04;
-      radiusFactor =
-        minRadius +
-        Math.pow(latitudeFraction, 0.68) * (maxRadius - minRadius);
-      const frontDepth = Math.sqrt(
-        Math.max(0, 1 - radiusFactor * radiusFactor),
-      );
-      sample = createSurfaceSample(angle, frontDepth, 1);
-
-      if (layer === 'canopy') {
-        sample.position.z *= 0.76 + random() * 0.24;
-      } else {
-        const coreDepth = sample.position.z * (0.25 + random() * 0.5);
-        sample.position.z = (random() * 2 - 1) * coreDepth;
-      }
+      // Inner core filling the deep interior
+      const progress = (localIndex + 0.5) / localCount;
+      const longitudeFraction =
+        ((localIndex * GOLDEN_RATIO_STEP + 0.67 + (random() - 0.5) * 0.08) % 1 + 1) % 1;
+      const angle = angleAtArcFraction(longitudeFraction);
+      const latitudeSin = (random() * 2 - 1) * 0.82;
+      radiusFactor = 0.24 + random() * 0.42;
+      sample = createSurfaceSample(angle, latitudeSin, radiusFactor);
     }
 
     if (layer !== 'shell') {
-      const outline = sampleOutline(angle);
-      const centeredY = outline.y - SURFACE_CENTER_Y;
-      sample.position.x = outline.x * radiusFactor;
-      sample.position.y =
-        SURFACE_CENTER_Y + centeredY * radiusFactor;
+      // Fill the central heart valley between lobes to eliminate any interior void
+      if (Math.abs(sample.position.x) < 0.32 && sample.position.y > 0.05) {
+        sample.position.x += (random() * 2 - 1) * 0.20;
+      }
     }
 
     anchors[index] = {
@@ -210,7 +210,7 @@ export function createHeartAnchors({ count, seed }) {
   // 3-Tier Art-Directed Ambient Floating Petals:
   // Tier A (Halo ~50%): drift closely around the heart silhouette
   // Tier B (Midground ~35%): spatial drift creating volume and atmosphere
-  // Tier C (Foreground ~15%): large cinematic petals near camera lens
+  // Tier C (Foreground ~15%): large cinematic petals framing the viewport margins
   for (let i = 0; i < ambientCount; i += 1) {
     const index = heartCount + i;
     const tierRoll = random();
@@ -219,27 +219,43 @@ export function createHeartAnchors({ count, seed }) {
     let isForeground = false;
     let ambientTier;
     let bokehScale = 1.0;
+    let ambientAngle;
 
     if (tierRoll < 0.50) {
       // Tier A: Heart Halo
       ambientTier = 'halo';
+      ambientAngle = random() * TAU;
       ambientDist = 1.05 + random() * 0.25;
       posZ = (random() - 0.5) * 0.8;
     } else if (tierRoll < 0.85) {
       // Tier B: Midground
       ambientTier = 'midground';
+      ambientAngle = random() * TAU;
       ambientDist = 1.30 + random() * 0.90;
       posZ = (random() - 0.5) * 2.2;
     } else {
-      // Tier C: Foreground Bokeh
+      // Tier C: Foreground Bokeh — art-directed to frame the corners & margins like the reference photo
       ambientTier = 'foreground';
       isForeground = true;
-      ambientDist = 0.65 + random() * 1.55;
-      posZ = 1.8 + random() * 1.8; // Z in [1.8, 3.6] towards camera at 5.0
-      bokehScale = 1.6 + random() * 1.0;
+      const cornerChoice = random();
+      if (cornerChoice < 0.28) {
+        // Top-right corner
+        ambientAngle = 0.45 + random() * 0.55;
+      } else if (cornerChoice < 0.56) {
+        // Top-left corner
+        ambientAngle = 2.15 + random() * 0.55;
+      } else if (cornerChoice < 0.78) {
+        // Bottom-left corner
+        ambientAngle = 3.65 + random() * 0.65;
+      } else {
+        // Bottom-right corner
+        ambientAngle = 5.05 + random() * 0.65;
+      }
+      ambientDist = 1.35 + random() * 0.95;
+      posZ = 2.0 + random() * 1.6; // Z in [2.0, 3.6] towards camera at 5.0
+      bokehScale = 1.65 + random() * 1.25;
     }
 
-    const ambientAngle = random() * TAU;
     const ambientOutline = sampleOutline(ambientAngle);
     const posX = ambientOutline.x * ambientDist * (0.85 + random() * 0.3);
     const posY =

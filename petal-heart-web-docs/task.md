@@ -1006,5 +1006,44 @@ Chỉ đánh dấu mục này khi B07 hoàn tất:
   - Sàn phản chiếu hữu cơ (Seamless crimson glow pool): loại bỏ hoàn toàn mặt phẳng vuông cắt ngang, thay bằng đĩa hào quang đỏ thắm phát sáng tụ ngay dưới mũi tim và tan biến êm dịu vào nền đen tuyệt đối.
   - UnrealBloomPass cân chỉnh (`threshold: 0.25`, `radius: 0.52`, `baseStrength: 0.52`) tạo hào quang nhung đỏ mê hoặc mà không làm mờ chi tiết cánh hoa.
 
+---
+
+# PHASE C — CINEMATIC CLIMAX & INTERACTIVE ENDING UPGRADE
+
+**Mục tiêu:** Nâng cấp đoạn kết theo hướng cinematic, romantic, UI/UX đẹp và có cao trào rõ rệt: sync nhịp tim tới đỉnh điểm vụ nổ, viên ngọc phát sáng ở tâm tim, tương tác click/tap trên desktop & mobile với hiệu ứng shockwave bùng nổ, và reveal chữ 3D "I love you!" trong khung cảnh lơ lửng vĩnh cửu.
+
+### Checklist hoàn thành
+
+- [x] **1. Sync Heartbeat → Explosion:**
+  - Flow nhịp tim tăng tốc tự nhiên: `slow heartbeat (0.95s)` → `faster` → `rapid (0.32s)` → `tension (nén thu lực & vi rung)` → `final strong beat (nhịp tâm trương bùng nổ tới scale 1.22+)` → `explosion`.
+  - Không nổ đột ngột: đỉnh của nhịp cuối chính là khởi điểm của explosion, ánh sáng và scale đạt đỉnh đồng pha.
+  - Đèn lõi tim và sàn phản chiếu đồng bộ cường độ tăng vọt từ 1.7 lên 3.2+ tại thời khắc bùng nổ.
+- [x] **2. Gem ở giữa tim (Core Crystal):**
+  - Khối pha lê hai đầu đa diện (faceted bipyramidal octahedron) với lõi phát quang bên trong và lớp vỏ tán sắc phản quang (`flatShading: true`, `transmission: 0.55`, `clearcoat: 1.0`, `ior: 1.65`).
+  - Đóng vai trò là "trái tim pha lê" phát sáng nồng ấm từ bên trong khi tim còn nguyên.
+  - Hào quang ánh sáng ethereal aura halo và 18 đốm sáng tinh tú (starlight fireflies) quay quanh theo quỹ đạo tỷ lệ vàng.
+- [x] **3. Sau khi tim nổ (Floating Focal Point):**
+  - Cánh hoa bay tản ra không gian 3D, viên ngọc giữ nguyên vị trí tâm scene `(0, 0.05, 0)`.
+  - Chuyển động lơ lửng êm ái (`levitationY = 0.05 + sin(t * 1.6) * 0.038`), tự xoay góc đôi và nhịp thở êm dịu.
+  - Trở thành tâm điểm thị giác tuyệt đối của toàn bộ khung cảnh.
+- [x] **4. Click / Tap Gem (Interactive Hover & Burst FX):**
+  - Raycaster hỗ trợ cả desktop (pointer hover) và mobile (touch hit sphere bán kính 0.55 rộng rãi, dễ bấm).
+  - Feedback hover: cursor pointer, ánh sáng emissive tăng +85%, halo nở rộng 1.35x, nhấc nhẹ nam châm.
+  - Beckoning Ripple: sóng ánh sáng mời gọi chạm tỏa ra chu kỳ 2.4s trong trạng thái `GEM_IDLE` mà không cần nút bấm thô.
+  - Khi click/tap:
+    - Gem bùng sáng chói lọi (flash boost 4.5).
+    - Vòng sóng xung kích 3D (multi-planar shockwave rings) lan rộng từ 0.2 tới 4.2.
+    - Chùm 72 tia sao lấp lánh (sparkle starburst) phân tán đa hướng với lực cản không khí tự nhiên.
+    - 28 cánh hoa hồng siêu nhỏ (miniature rose petals) xoáy tung lốc tròn.
+- [x] **5. 3D Love Text ("I love you!"):**
+  - Chữ 3D TextGeometry chân thực với font Optimer humanist thanh lịch, vát cạnh bevel 4 lớp.
+  - Chất liệu kép lãng mạn: mặt trước ngọc trai ánh hồng ấm áp (`#fff6f9`), viền và cạnh bên ruby nhung rực sáng (`#eb1d53`).
+  - Animation reveal: trồi lên từ tâm ngọc (`y: 0.25 -> 0.82`), bung nở với độ nảy nhẹ (`scale: 0.05 -> 1.05 -> 1.0`), bloom hào quang rạng rỡ.
+  - Responsive mobile portrait: tự động co giãn theo tỷ lệ màn hình (từ 0.62x trên màn hình hẹp), hiển thị hoàn hảo, không tràn viền.
+- [x] **6. UI/UX Flow & Final End State:**
+  - Flow trạng thái hoàn chỉnh: `BOOT` → `PRELOAD` → `INTRO` → `HEART_IDLE` → `HEARTBEAT` → `RAPID_HEARTBEAT` → `TENSION` → `EXPLOSION` → `PETAL_FLIGHT` → `GEM_IDLE` → `USER CLICK GEM` → `GEM_BURST` → `LOVE_REVEAL` → `END`.
+  - Trạng thái cuối vĩnh cửu: không nút restart, không reload trang, cánh hoa trôi bềnh bồng, ngọc pha lê lấp lánh, dòng chữ "I love you!" bồng bềnh thở nhẹ đầy cảm xúc.
+
+
 
 

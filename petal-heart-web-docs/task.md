@@ -505,14 +505,14 @@ low
 
 ### Checklist
 
-- [ ] Profile chứa ít nhất `petalCount`, `dprCap`, `bloomScale/intensity`, `foregroundRatio`, `flutterEnabled`.
-- [ ] High khoảng 4,500–7,000 target petals; Medium 2,500–4,000; Low 1,200–2,500.
-- [ ] Heuristic đọc viewport/DPR/hardwareConcurrency/deviceMemory nếu browser expose; luôn có fallback khi API không tồn tại.
-- [ ] Profile immutable sau INTRO; không đổi petal count giữa cinematic.
-- [ ] Test các capability fixture thấp/trung/cao.
-- [ ] Khi `document.hidden`, pause timeline/RAF hoặc reset clock origin khi resume.
-- [ ] Test/simulate không tích hợp delta nhiều giây sau tab resume.
-- [ ] DPR luôn cap theo profile; không dùng raw `window.devicePixelRatio` vô hạn.
+- [x] Profile chứa ít nhất `petalCount`, `dprCap`, `bloomScale/intensity`, `foregroundRatio`, `flutterEnabled`.
+- [x] High khoảng 4,500–7,000 target petals; Medium 2,500–4,000; Low 1,200–2,500.
+- [x] Heuristic đọc viewport/DPR/hardwareConcurrency/deviceMemory nếu browser expose; luôn có fallback khi API không tồn tại.
+- [x] Profile immutable sau INTRO; không đổi petal count giữa cinematic.
+- [x] Test các capability fixture thấp/trung/cao.
+- [x] Khi `document.hidden`, pause timeline/RAF hoặc reset clock origin khi resume.
+- [x] Test/simulate không tích hợp delta nhiều giây sau tab resume.
+- [x] DPR luôn cap theo profile; không dùng raw `window.devicePixelRatio` vô hạn.
 
 ### Done when
 

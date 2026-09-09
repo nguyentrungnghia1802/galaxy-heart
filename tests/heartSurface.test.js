@@ -62,6 +62,35 @@ describe('createHeartAnchors', () => {
     expect(Math.min(...zs)).toBeLessThan(-0.65);
     expect(Math.max(...zs)).toBeGreaterThan(0.65);
   });
+
+  it('packs enough bound petals onto the camera-facing body to avoid a hollow-looking center', () => {
+    const anchors = createHeartAnchors({ count: 6_000, seed: 1234 }).filter(
+      (anchor) => !anchor.isAmbient,
+    );
+    const frontFacing = anchors.filter((anchor) => anchor.position.z >= 0.15);
+    const centralFront = frontFacing.filter(
+      (anchor) =>
+        Math.abs(anchor.position.x) <= 0.45 &&
+        anchor.position.y >= -0.35 &&
+        anchor.position.y <= 0.65,
+    );
+
+    expect(frontFacing.length / anchors.length).toBeGreaterThan(0.45);
+    expect(centralFront.length).toBeGreaterThan(420);
+  });
+
+  it('keeps the bound heart silhouette full rather than wide and flattened', () => {
+    const anchors = createHeartAnchors({ count: 6_000, seed: 1234 }).filter(
+      (anchor) => !anchor.isAmbient,
+    );
+    const xs = anchors.map((anchor) => anchor.position.x);
+    const ys = anchors.map((anchor) => anchor.position.y);
+    const width = Math.max(...xs) - Math.min(...xs);
+    const height = Math.max(...ys) - Math.min(...ys);
+
+    expect(width / height).toBeGreaterThan(0.95);
+    expect(width / height).toBeLessThan(1.1);
+  });
 });
 
 describe('createHeartDebugPositions', () => {

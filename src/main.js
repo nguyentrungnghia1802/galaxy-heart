@@ -6,3 +6,6 @@ const app = new App(container);
 
 app.start();
 
+if (import.meta.env.DEV) {
+  window.__PETAL_HEART_APP__ = app;
+}

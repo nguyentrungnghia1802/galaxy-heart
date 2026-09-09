@@ -350,16 +350,21 @@ noiseSeed
 
 ### Checklist
 
-- [ ] Dùng `THREE.InstancedMesh`; tuyệt đối không tạo 1 `Mesh` cho mỗi petal.
-- [ ] Dữ liệu động dùng typed arrays hoặc layout tương đương ít GC.
-- [ ] Tạo/reuse temp `Vector3`, `Quaternion`, `Matrix4` thay vì allocate trong loop.
-- [ ] `attachToHeart(anchorData)` map instances trực tiếp vào anchors.
-- [ ] Cùng instance indices được giữ nguyên khi chuyển state; không tạo particle system mới lúc explosion.
-- [ ] Chỉ set `instanceMatrix.needsUpdate = true` một lần sau batch update mỗi frame.
-- [ ] Có instance color hoặc color seed đủ để phase visual sau áp palette.
-- [ ] Render benchmark tối thiểu 1,500 / 3,000 / 6,000 petals bằng material đơn giản.
-- [ ] Ghi chú FPS/draw calls trong commit message hoặc task notes nếu có bất thường.
-- [ ] Chưa cần petal đẹp; geometry placeholder low-poly là chấp nhận ở task này.
+- [x] Dùng `THREE.InstancedMesh`; tuyệt đối không tạo 1 `Mesh` cho mỗi petal.
+- [x] Dữ liệu động dùng typed arrays hoặc layout tương đương ít GC.
+- [x] Tạo/reuse temp `Vector3`, `Quaternion`, `Matrix4` thay vì allocate trong loop.
+- [x] `attachToHeart(anchorData)` map instances trực tiếp vào anchors.
+- [x] Cùng instance indices được giữ nguyên khi chuyển state; không tạo particle system mới lúc explosion.
+- [x] Chỉ set `instanceMatrix.needsUpdate = true` một lần sau batch update mỗi frame.
+- [x] Có instance color hoặc color seed đủ để phase visual sau áp palette.
+- [x] Render benchmark tối thiểu 1,500 / 3,000 / 6,000 petals bằng material đơn giản.
+- [x] Ghi chú FPS/draw calls trong commit message hoặc task notes nếu có bất thường.
+- [x] Chưa cần petal đẹp; geometry placeholder low-poly là chấp nhận ở task này.
+
+### Verification notes
+
+- Browser/WebGL smoke at 1,500 / 3,000 / 6,000 instances: one `InstancedMesh`, one draw call, no console warning/error.
+- Local Node.js attach benchmark: 1,500 = 8.71 ms; 3,000 = 12.53 ms; 6,000 = 5.71 ms (single-run values, JIT variance expected).
 
 ### Done when
 

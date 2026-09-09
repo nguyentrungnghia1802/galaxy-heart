@@ -230,14 +230,14 @@ getHeartbeatIntensity(stateSnapshot)
 
 ### Checklist
 
-- [ ] Test envelope tại các key phase chính: `0.00`, `0.10`, `0.18`, `0.28`, `0.38`, `1.00`.
-- [ ] Đảm bảo có 2 peak riêng biệt trong một chu kỳ, không phải sine/breathing.
-- [ ] Test interval giảm từ khoảng `0.90s` về khoảng `0.28s` theo easing tăng tốc.
-- [ ] Giới hạn scale peak tối đa khoảng `1.12` ở normal path.
-- [ ] Tách scale signal và intensity/glow signal để visual phase sau có thể glow mạnh hơn mà không phóng tim quá to.
-- [ ] `HeartSystem` chỉ quản lý heartbeat/attached global transform; không chứa explosion physics.
-- [ ] Reset phải đưa phase về đầu sạch sẽ.
-- [ ] Chạy tests.
+- [x] Test envelope tại các key phase chính: `0.00`, `0.10`, `0.18`, `0.28`, `0.38`, `1.00`.
+- [x] Đảm bảo có 2 peak riêng biệt trong một chu kỳ, không phải sine/breathing.
+- [x] Test interval giảm từ khoảng `0.90s` về khoảng `0.28s` theo easing tăng tốc.
+- [x] Giới hạn scale peak tối đa khoảng `1.12` ở normal path.
+- [x] Tách scale signal và intensity/glow signal để visual phase sau có thể glow mạnh hơn mà không phóng tim quá to.
+- [x] `HeartSystem` chỉ quản lý heartbeat/attached global transform; không chứa explosion physics.
+- [x] Reset phải đưa phase về đầu sạch sẽ.
+- [x] Chạy tests.
 
 ### Done when
 

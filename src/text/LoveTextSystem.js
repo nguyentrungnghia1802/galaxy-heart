@@ -33,35 +33,35 @@ export class LoveTextSystem {
     textGeo.computeBoundingBox();
     textGeo.center();
 
-    // 2. Dual-Tone Romantic Materials (face = soft velvety warm blush, sides = deep ruby-rose bevels)
-    // Softened ~40% to preserve crisp character readability and prevent bloom washout
+    // 2. Dual-Tone Romantic Materials (face = warm satin ivory-blush, sides = deep crimson-wine velvet depth)
+    // Non-emissive physical materials eliminate neon glow and bloom washout for crisp 3D letterforms
     this.faceMat = new THREE.MeshPhysicalMaterial({
-      color: 0xfff6f9,
-      emissive: 0x240610,
-      emissiveIntensity: 0.16,
-      roughness: 0.22,
-      metalness: 0.08,
-      clearcoat: 0.9,
+      color: 0xfcf3f5,
+      emissive: 0x000000,
+      emissiveIntensity: 0.0,
+      roughness: 0.24,
+      metalness: 0.04,
+      clearcoat: 0.8,
       clearcoatRoughness: 0.08,
       side: THREE.FrontSide,
     });
 
     this.sideMat = new THREE.MeshPhysicalMaterial({
-      color: 0xd91f52,
-      emissive: 0x440816,
-      emissiveIntensity: 0.32,
-      roughness: 0.28,
-      metalness: 0.12,
-      clearcoat: 0.5,
+      color: 0x820e2a,
+      emissive: 0x000000,
+      emissiveIntensity: 0.0,
+      roughness: 0.42,
+      metalness: 0.08,
+      clearcoat: 0.3,
       side: THREE.FrontSide,
     });
 
     this.textMesh = new THREE.Mesh(textGeo, [this.faceMat, this.sideMat]);
     this.group.add(this.textMesh);
 
-    // 3. Ambient Text Soft Point Light (delicate front illumination)
-    this.textLight = new THREE.PointLight(0xff4572, 0, 3.2, 2.0);
-    this.textLight.position.set(0, 0, 0.3);
+    // 3. Diffused Front Illumination (gentle warm spotlight from slightly forward distance)
+    this.textLight = new THREE.PointLight(0xffe4ec, 0, 3.5, 2.0);
+    this.textLight.position.set(0, 0.1, 0.75);
     this.group.add(this.textLight);
 
     // Initial hidden state
@@ -122,12 +122,10 @@ export class LoveTextSystem {
     const s = scaleFactor * breath * responsiveScale;
     this.group.scale.set(s, s, s);
 
-    // 4. Subtle romantic lighting ramp during reveal, settling into soft warm radiance
-    const flashBoost =
-      state === 'LOVE_REVEAL' ? Math.sin(progress * Math.PI) * 0.35 : 0;
-    this.faceMat.emissiveIntensity = 0.16 + flashBoost * 0.22;
-    this.sideMat.emissiveIntensity = 0.32 + flashBoost * 0.38;
-    this.textLight.intensity = (1.12 + flashBoost * 0.8) * t;
+    // 4. Clean, elegant illumination without bloom blowout or neon emissive
+    this.faceMat.emissiveIntensity = 0;
+    this.sideMat.emissiveIntensity = 0;
+    this.textLight.intensity = 1.05 * t;
   }
 
   reset() {

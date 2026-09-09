@@ -75,6 +75,14 @@ export class PostProcessing {
       // Dreamy romantic dispersal glow for flying petals
       const flightFactor = Math.max(0.7, 1 - progress * 0.35);
       targetStrength = this.baseStrength * flightFactor;
+    } else if (
+      state === 'GEM_IDLE' ||
+      state === 'GEM_BURST' ||
+      state === 'LOVE_REVEAL' ||
+      state === 'END'
+    ) {
+      // Subdued bloom for clean, elegant crystal facets and crisp non-neon typography
+      targetStrength = this.baseStrength * 0.25;
     }
 
     // Smooth interpolation to avoid abrupt visual pops

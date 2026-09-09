@@ -2,6 +2,7 @@ import { CameraSystem } from '../scene/CameraSystem.js';
 import { createHeartAnchors } from '../heart/HeartSurface.js';
 import { HeartSystem } from '../heart/HeartSystem.js';
 import { PetalSystem } from '../petals/PetalSystem.js';
+import { PostProcessing } from '../fx/PostProcessing.js';
 import { createScene } from '../scene/createScene.js';
 import { RendererSystem } from '../scene/RendererSystem.js';
 import { VisibilityClock } from '../utils/visibility.js';
@@ -55,6 +56,20 @@ export class App {
         profile: this.qualityProfile,
         devicePixelRatio: capabilities.dpr,
       });
+
+    this.postProcessing =
+      options.postProcessing ??
+      (this.qualityProfile.bloomScale > 0 &&
+      this.rendererSystem?.renderer?.capabilities !== undefined
+        ? new PostProcessing({
+            renderer: this.rendererSystem.renderer,
+            scene: this.scene,
+            camera: this.camera,
+            profile: this.qualityProfile,
+            width: capabilities.viewportWidth,
+            height: capabilities.viewportHeight,
+          })
+        : null);
 
     const anchors = createHeartAnchors({
       count: this.qualityProfile.petalCount,
@@ -164,7 +179,12 @@ export class App {
     this.stateSnapshot.heartbeatIntensity = this.heartSystem.getIntensity();
     this.petalSystem.update(dt, this.stateSnapshot);
     this.updatePlaceholderSystems(dt);
-    this.rendererSystem.render(this.scene, this.camera);
+    if (this.postProcessing?.enabled) {
+      this.postProcessing.update(dt, this.stateSnapshot);
+      this.postProcessing.render();
+    } else {
+      this.rendererSystem.render(this.scene, this.camera);
+    }
     this.updateDebugMetrics(now);
 
     if (this.stateMachine.state === 'END') {
@@ -267,6 +287,7 @@ export class App {
     const height =
       this.container.clientHeight || this.windowTarget.innerHeight || 1;
     this.cameraSystem?.resize(width, height);
+    this.postProcessing?.resize(width, height);
     this.rendererSystem.resize(width, height, this.camera);
   }
 
@@ -314,6 +335,7 @@ export class App {
       this.replayButton?.removeEventListener?.('click', this.handleReplay);
     }
     this.petalSystem.dispose();
+    this.postProcessing?.dispose();
     this.rendererSystem.dispose();
     this.disposed = true;
   }

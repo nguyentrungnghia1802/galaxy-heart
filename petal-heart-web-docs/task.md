@@ -730,14 +730,14 @@ src/scene/LightingSystem.js
 
 ### Checklist
 
-- [ ] Dùng `EffectComposer` + bloom phù hợp.
-- [ ] Bloom intensity nhận heartbeat intensity từ core; không tự tạo timer riêng.
-- [ ] Trong RAPID_HEARTBEAT glow tăng dần rõ hơn scale.
-- [ ] TENSION: dolly/glow/flash nhẹ 40–80 ms nếu phù hợp.
-- [ ] Explosion đạt peak dưới 1 giây.
-- [ ] Không flash trắng toàn màn hình quá mạnh.
-- [ ] Bloom render target có thể giảm resolution theo quality profile.
-- [ ] Low profile vẫn đẹp khi bloom simplified/giảm chất lượng.
+- [x] Dùng `EffectComposer` + bloom phù hợp.
+- [x] Bloom intensity nhận heartbeat intensity từ core; không tự tạo timer riêng.
+- [x] Trong RAPID_HEARTBEAT glow tăng dần rõ hơn scale.
+- [x] TENSION: dolly/glow/flash nhẹ 40–80 ms nếu phù hợp.
+- [x] Explosion đạt peak dưới 1 giây.
+- [x] Không flash trắng toàn màn hình quá mạnh.
+- [x] Bloom render target có thể giảm resolution theo quality profile.
+- [x] Low profile vẫn đẹp khi bloom simplified/giảm chất lượng.
 
 ### Done when
 

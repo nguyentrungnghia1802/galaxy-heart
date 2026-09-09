@@ -972,3 +972,36 @@ Chỉ đánh dấu mục này khi B07 hoàn tất:
 
 - [x] **PETAL HEART 3D V1 COMPLETE**
 
+---
+
+# PHASE B+ — VISUAL REFINEMENT (IMAGE B ALIGNMENT)
+
+**Mục tiêu:** Cải tiến visual từ trạng thái ban đầu tiến gần ảnh reference mong muốn (Image B / `heart-reference.png`): tim cấu thành từ vô số cánh hoa hồng đỏ đẹp dày dặn, ánh sáng cinematic, có nhiều cánh bay bên ngoài, màu sắc phong phú và cảm giác sống động, bảo toàn 100% core logic và performance của Phase A.
+
+### Checklist hoàn thành
+
+- [x] **1. Màu sắc & Chất liệu:**
+  - Bảng màu 10 biến thể tự nhiên từ Deep Wine Crimson (`#6e051c`), Burgundy (`#8c0a2a`), Crimson Red (`#b40e36`), Ruby Red (`#cc1642`), Scarlet Rose (`#e1224d`), Deep Coral (`#ea3a60`), Vibrant Rose Pink (`#f2547b`), Hot Pink (`#f77298`), Soft Blossom Pink (`#fca1b7`), đến Luminous Blush Highlight (`#ffbccc`).
+  - Cánh hoa cupped 3D hữu cơ 12-vertex / 12-triangle với 2 thùy cong tự nhiên, độ cong Z sâu và normal tính toán chính xác.
+  - Material nhung mượt mà (`roughness: 0.42`), specular sheen tinh tế, `alphaTest: 0.05` chống overdraw banding.
+- [x] **2. Trái tim dày, kín, không rỗng bên trong:**
+  - Cải tiến `HeartSurface.js` với thuật toán phân bố 3 tầng thể tích (3-layer volumetric stratified distribution):
+    - Tầng 1: Vỏ ngoài (Outer Shell) ~55% định hình silhouette trái tim kinh điển.
+    - Tầng 2: Lớp đệm giữa (Mantle) ~30% với bán kính thu vào $r \in [0.45, 0.85]$.
+    - Tầng 3: Lõi bên trong (Inner Core) ~15% lấp đầy hoàn toàn lòng tim với $r \in [0.15, 0.50]$.
+  - Bảo toàn tuyệt đối silhouette trái tim khi nhìn trực diện và tạo chiều sâu đa tầng khi có parallax.
+- [x] **3. Cánh hoa bay / lơ lửng bên ngoài khi tim còn nguyên vẹn:**
+  - Tách ~6% cánh hoa thành ambient floating petals trôi bồng bềnh xung quanh tim và tiền cảnh (foreground bokeh).
+  - Tích hợp 3D harmonic drift mượt mà theo thời gian: chuyển động trôi lơ lửng hữu cơ, không đứng im.
+  - Khi kích hoạt `EXPLOSION`, toàn bộ cánh hoa (cả bám tim lẫn bay xung quanh) đều được tích hợp đồng nhất vào simulation vật lý.
+- [x] **4. Chuyển động vi mô (living micro-flutter) khi tim giữ hình:**
+  - Các cánh hoa bám tim có vi dao động góc nghiêng và flutter nhẹ theo nhịp heartbeat và noise seed riêng biệt.
+  - Vị trí gốc anchor được giữ nguyên để bảo đảm tính ổn định cấu trúc và invariant của test.
+  - Tạo cảm giác "đã mắt", tự nhiên, như một đóa hoa sống đang thở.
+- [x] **5. Ánh sáng cinematic & hậu kỳ:**
+  - Tăng cường `innerLight` (cường độ 4.2, màu `0xff1a4e`) tỏa sáng rực rỡ từ tâm lòng tim xuyên qua các lớp cánh hoa thể tích.
+  - Tăng cường `rimLight` (cường độ 3.0, màu `0xff6a98`) tách rõ rệt viền cánh hoa và cánh hoa lơ lửng trên nền đen tuyền.
+  - Tăng cường `keyLight` (cường độ 3.5, màu `0xff4572`) và `groundLight` crimson pool reflection.
+  - Tinh chỉnh UnrealBloomPass (`threshold: 0.20`, `radius: 0.58`, `baseStrength: 0.62`) tạo hiệu ứng bloom nhung đỏ huyền ảo mà không làm đục nền đen.
+
+

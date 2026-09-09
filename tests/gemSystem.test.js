@@ -80,4 +80,37 @@ describe('GemSystem', () => {
 
     gem.dispose();
   });
+
+  it('disappears after activation and remains invisible in LOVE_REVEAL and END', () => {
+    const gem = new GemSystem();
+
+    // In GEM_IDLE, gem is visible
+    gem.update(0.016, { state: 'GEM_IDLE', progress: 0.5 });
+    expect(gem.outerMesh.visible).toBe(true);
+    expect(gem.innerMesh.visible).toBe(true);
+
+    // During late GEM_BURST, gem meshes dissolve and become invisible
+    gem.update(0.016, { state: 'GEM_BURST', progress: 0.9 });
+    expect(gem.outerMesh.visible).toBe(false);
+    expect(gem.innerMesh.visible).toBe(false);
+    expect(gem.gemLight.intensity).toBe(0);
+
+    // During LOVE_REVEAL and END, gem remains completely disappeared
+    gem.update(0.016, { state: 'LOVE_REVEAL', progress: 0.5 });
+    expect(gem.outerMesh.visible).toBe(false);
+    expect(gem.innerMesh.visible).toBe(false);
+    expect(gem.gemLight.intensity).toBe(0);
+
+    gem.update(0.016, { state: 'END', progress: 1.0 });
+    expect(gem.outerMesh.visible).toBe(false);
+    expect(gem.innerMesh.visible).toBe(false);
+
+    // After reset, gem visibility is restored
+    gem.reset();
+    expect(gem.outerMesh.visible).toBe(true);
+    expect(gem.innerMesh.visible).toBe(true);
+    expect(gem.gemLight.intensity).toBeGreaterThan(0);
+
+    gem.dispose();
+  });
 });

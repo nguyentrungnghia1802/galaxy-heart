@@ -36,44 +36,49 @@ export class GemSystem {
     this.idleTime = 0;
     this.burstFlash = 0;
 
-    // 1. Inner Glowing Crystal Core (Octahedron)
-    const innerGeo = new THREE.OctahedronGeometry(0.14, 0);
-    this.innerMat = new THREE.MeshBasicMaterial({
-      color: 0xffe6f0,
-      wireframe: false,
+    // 1. Inner Glowing Crystal Core (Octahedron - 60% size: 0.084)
+    const innerGeo = new THREE.OctahedronGeometry(0.084, 0);
+    this.innerMat = new THREE.MeshPhysicalMaterial({
+      color: 0xff9cb8,
+      emissive: 0x5a081a,
+      emissiveIntensity: 0.28,
+      roughness: 0.24,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.88,
     });
     this.innerMesh = new THREE.Mesh(innerGeo, this.innerMat);
     this.group.add(this.innerMesh);
 
-    // 2. Outer Faceted Crystal Diamond
+    // 2. Outer Faceted Crystal Diamond (60% size: 0.156)
     // Custom faceted bipyramid diamond geometry for sparkling facets
-    const outerGeo = new THREE.OctahedronGeometry(0.26, 0);
+    const outerGeo = new THREE.OctahedronGeometry(0.156, 0);
     outerGeo.scale(0.85, 1.35, 0.85);
 
     this.outerMat = new THREE.MeshPhysicalMaterial({
-      color: 0xff386c,
-      emissive: 0x8a0628,
-      emissiveIntensity: 0.7,
-      roughness: 0.12,
-      metalness: 0.15,
+      color: 0xff3368,
+      emissive: 0x4a0416,
+      emissiveIntensity: 0.28,
+      roughness: 0.15,
+      metalness: 0.18,
       clearcoat: 1.0,
       clearcoatRoughness: 0.04,
-      transmission: 0.55,
-      ior: 1.65,
+      transmission: 0.62,
+      ior: 1.62,
       flatShading: true,
       transparent: true,
-      opacity: 0.95,
+      opacity: 0.92,
       side: THREE.DoubleSide,
     });
     this.outerMesh = new THREE.Mesh(outerGeo, this.outerMat);
     this.group.add(this.outerMesh);
 
-    // 3. Ethereal Radiant Halo (soft glowing billboard aura)
-    const haloGeo = new THREE.RingGeometry(0.04, 0.42, 36);
+    // 3. Ethereal Radiant Halo (soft glowing compact billboard aura)
+    const haloGeo = new THREE.RingGeometry(0.024, 0.22, 36);
     this.haloMat = new THREE.MeshBasicMaterial({
-      color: 0xff3568,
+      color: 0xde285e,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.16,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
@@ -81,10 +86,10 @@ export class GemSystem {
     this.haloMesh = new THREE.Mesh(haloGeo, this.haloMat);
     this.group.add(this.haloMesh);
 
-    // 4. Beckoning Ripple Ring (Periodic inviting touch wave in GEM_IDLE)
-    const rippleGeo = new THREE.RingGeometry(0.18, 0.22, 36);
+    // 4. Beckoning Ripple Ring (Subtle inviting touch cue in GEM_IDLE)
+    const rippleGeo = new THREE.RingGeometry(0.11, 0.14, 36);
     this.rippleMat = new THREE.MeshBasicMaterial({
-      color: 0xff7099,
+      color: 0xff6b94,
       transparent: true,
       opacity: 0,
       side: THREE.DoubleSide,
@@ -94,7 +99,7 @@ export class GemSystem {
     this.rippleMesh = new THREE.Mesh(rippleGeo, this.rippleMat);
     this.group.add(this.rippleMesh);
 
-    // 5. Orbiting Firefly Sparkle Particles
+    // 5. Orbiting Firefly Sparkle Particles (compact radii)
     this.sparkleAngles = new Float32Array(ORBIT_SPARKLE_COUNT);
     this.sparkleRadii = new Float32Array(ORBIT_SPARKLE_COUNT);
     this.sparkleSpeeds = new Float32Array(ORBIT_SPARKLE_COUNT);
@@ -103,9 +108,9 @@ export class GemSystem {
 
     for (let i = 0; i < ORBIT_SPARKLE_COUNT; i++) {
       this.sparkleAngles[i] = (i / ORBIT_SPARKLE_COUNT) * Math.PI * 2;
-      this.sparkleRadii[i] = 0.35 + (i % 3) * 0.12;
+      this.sparkleRadii[i] = 0.21 + (i % 3) * 0.07;
       this.sparkleSpeeds[i] = 0.6 + (i % 4) * 0.25;
-      this.sparkleHeights[i] = ((i % 5) - 2) * 0.08;
+      this.sparkleHeights[i] = ((i % 5) - 2) * 0.04;
     }
 
     const orbitGeo = new THREE.BufferGeometry();
@@ -115,10 +120,10 @@ export class GemSystem {
     );
     this.sparkleTex = createSparkleTexture();
     const orbitMatConfig = {
-      color: 0xfff2f8,
-      size: 0.16,
+      color: 0xffe8f2,
+      size: 0.09,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.48,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       sizeAttenuation: true,
@@ -130,12 +135,12 @@ export class GemSystem {
     this.orbitPoints = new THREE.Points(orbitGeo, this.orbitMat);
     this.group.add(this.orbitPoints);
 
-    // 6. Gem Internal Point Light
-    this.gemLight = new THREE.PointLight(0xff2d62, 3.2, 5.0, 2.0);
+    // 6. Gem Internal Soft Point Light (delicate, non-blinding)
+    this.gemLight = new THREE.PointLight(0xff2d62, 1.15, 3.5, 2.0);
     this.group.add(this.gemLight);
 
-    // 7. Interactive Invisible Hit Mesh (Generous radius for mobile touch & desktop hover)
-    const hitGeo = new THREE.SphereGeometry(0.55, 12, 12);
+    // 7. Interactive Invisible Hit Mesh (Generous radius for easy mobile touch & desktop click)
+    const hitGeo = new THREE.SphereGeometry(0.48, 12, 12);
     const hitMat = new THREE.MeshBasicMaterial({
       visible: false,
     });
@@ -147,7 +152,7 @@ export class GemSystem {
     this.gemBurst = new GemBurst({ seed: options.seed });
     this.group.add(this.gemBurst.group);
 
-    // Visibility toggle (always visible, floats at center)
+    // Initial state
     this.group.visible = true;
   }
 
@@ -171,13 +176,55 @@ export class GemSystem {
       state === 'LOVE_REVEAL' ||
       state === 'END';
 
+    // Disappearance logic: after gem activation, gem dissolves and vanishes completely
+    if (state === 'LOVE_REVEAL' || state === 'END') {
+      this.innerMesh.visible = false;
+      this.outerMesh.visible = false;
+      this.haloMesh.visible = false;
+      this.rippleMesh.visible = false;
+      this.orbitPoints.visible = false;
+      this.hitMesh.visible = false;
+      this.gemLight.intensity = 0;
+      this.gemBurst.update(dt);
+      return;
+    }
+
+    let disappearScale = 1.0;
+    let disappearAlpha = 1.0;
+
+    if (state === 'GEM_BURST') {
+      // Short activation pulse in early frame, then smooth shrink and fade to zero
+      const dissolveProgress = clamp((progress - 0.12) / 0.68, 0, 1);
+      disappearScale = Math.max(0, 1 - Math.pow(dissolveProgress, 1.4));
+      disappearAlpha = Math.max(0, 1 - Math.pow(dissolveProgress, 1.1));
+
+      if (progress >= 0.85) {
+        this.innerMesh.visible = false;
+        this.outerMesh.visible = false;
+        this.haloMesh.visible = false;
+        this.rippleMesh.visible = false;
+        this.orbitPoints.visible = false;
+        this.hitMesh.visible = false;
+        this.gemLight.intensity = 0;
+        this.gemBurst.update(dt);
+        return;
+      }
+    }
+
+    // Ensure elements are visible during pre-dissolve states
+    this.innerMesh.visible = true;
+    this.outerMesh.visible = true;
+    this.haloMesh.visible = true;
+    this.orbitPoints.visible = true;
+    this.hitMesh.visible = true;
+
     // 1. Smooth hover transition (fast in, smooth out)
     const targetHover = this.isHovered ? 1.0 : 0.0;
     this.hoverFactor += (targetHover - this.hoverFactor) * Math.min(1, dt * 10);
 
     // 2. Levitation & Floating Rotation
     const floatSpeed = isExploded ? 1.6 : 1.0;
-    const floatAmp = isExploded ? 0.038 : 0.012;
+    const floatAmp = isExploded ? 0.032 : 0.010;
     this.group.position.y =
       this.basePosition.y + Math.sin(this.time * floatSpeed) * floatAmp;
 
@@ -189,35 +236,37 @@ export class GemSystem {
     this.outerMesh.rotation.z = Math.cos(this.time * 0.7) * 0.06;
 
     // 3. Gem Scale Envelope
-    // Breathing pulse + hover lift + burst flash expansion
-    const breathing = Math.sin(this.time * 2.2) * 0.035;
-    const hoverScale = this.hoverFactor * 0.12;
-    const burstScale = Math.sin(this.burstFlash * Math.PI) * 0.25;
-    const totalScale = 1.0 + breathing + hoverScale + burstScale;
+    // Breathing pulse + hover lift + subtle activation flash expansion
+    const breathing = Math.sin(this.time * 2.2) * 0.03;
+    const hoverScale = this.hoverFactor * 0.10;
+    const burstScale = Math.sin(this.burstFlash * Math.PI) * 0.15;
+    const totalScale = (1.0 + breathing + hoverScale + burstScale) * disappearScale;
     this.outerMesh.scale.set(0.85 * totalScale, 1.35 * totalScale, 0.85 * totalScale);
     this.innerMesh.scale.set(totalScale, totalScale, totalScale);
 
-    // 4. Material Glow & Bloom Response
-    // Decay burst flash exponentially
+    // 4. Material Glow & Bloom Response (Softened ~40% of original brightness)
     if (this.burstFlash > 0.001) {
-      this.burstFlash = Math.max(0, this.burstFlash - dt * 2.5);
+      this.burstFlash = Math.max(0, this.burstFlash - dt * 3.0);
     }
-    const baseEmissive = isExploded ? 0.75 : 0.55;
+    const baseEmissive = isExploded ? 0.30 : 0.22;
     const activeEmissive =
-      baseEmissive + this.hoverFactor * 0.7 + this.burstFlash * 3.5;
+      baseEmissive + this.hoverFactor * 0.25 + this.burstFlash * 1.1;
     this.outerMat.emissiveIntensity = activeEmissive;
+    this.outerMat.opacity = 0.92 * disappearAlpha;
+    this.innerMat.opacity = 0.88 * disappearAlpha;
 
-    // Gem light intensity tracks emissive
+    // Gem light intensity tracks emissive smoothly
     this.gemLight.intensity =
-      2.8 + this.hoverFactor * 1.6 + this.burstFlash * 6.0;
+      (1.1 + this.hoverFactor * 0.6 + this.burstFlash * 1.8) * disappearAlpha;
 
-    // Halo pulse & hover expansion
+    // Halo pulse & hover expansion (subtle and soft)
     const haloScale =
-      (1.0 + Math.sin(this.time * 2.0) * 0.06 + this.hoverFactor * 0.35) *
-      (1.0 + this.burstFlash * 1.2);
+      (1.0 + Math.sin(this.time * 2.0) * 0.05 + this.hoverFactor * 0.18) *
+      (1.0 + this.burstFlash * 0.35) *
+      disappearScale;
     this.haloMesh.scale.set(haloScale, haloScale, haloScale);
     this.haloMat.opacity = clamp(
-      0.35 + this.hoverFactor * 0.3 + this.burstFlash * 0.5,
+      (0.14 + this.hoverFactor * 0.12 + this.burstFlash * 0.2) * disappearAlpha,
       0,
       1,
     );
@@ -227,9 +276,9 @@ export class GemSystem {
       this.idleTime += dt;
       const ripplePeriod = 2.4;
       const ripplePhase = (this.idleTime % ripplePeriod) / ripplePeriod;
-      const rippleScale = lerp(0.8, 2.6, Math.pow(ripplePhase, 0.5));
+      const rippleScale = lerp(0.8, 2.1, Math.pow(ripplePhase, 0.5));
       this.rippleMesh.scale.set(rippleScale, rippleScale, rippleScale);
-      this.rippleMat.opacity = Math.sin(ripplePhase * Math.PI) * 0.55;
+      this.rippleMat.opacity = Math.sin(ripplePhase * Math.PI) * 0.24;
       this.rippleMesh.visible = true;
     } else {
       this.rippleMesh.visible = false;
@@ -240,16 +289,20 @@ export class GemSystem {
     for (let i = 0; i < ORBIT_SPARKLE_COUNT; i++) {
       this.sparkleAngles[i] += dt * this.sparkleSpeeds[i] * sparkleSpeedMult;
       const angle = this.sparkleAngles[i];
-      const radius = this.sparkleRadii[i] * (1.0 + this.hoverFactor * 0.15);
+      const radius = this.sparkleRadii[i] * (1.0 + this.hoverFactor * 0.12) * disappearScale;
       const height =
-        this.sparkleHeights[i] + Math.sin(angle * 2.0 + i) * 0.04;
+        this.sparkleHeights[i] * disappearScale + Math.sin(angle * 2.0 + i) * 0.025;
 
       this.sparklePositions[i * 3 + 0] = Math.cos(angle) * radius;
       this.sparklePositions[i * 3 + 1] = height;
       this.sparklePositions[i * 3 + 2] = Math.sin(angle) * radius;
     }
     this.orbitPoints.geometry.attributes.position.needsUpdate = true;
-    this.orbitMat.opacity = clamp(0.75 + this.hoverFactor * 0.25, 0, 1);
+    this.orbitMat.opacity = clamp(
+      (0.42 + this.hoverFactor * 0.18) * disappearAlpha,
+      0,
+      1,
+    );
 
     // 7. Update Burst FX
     this.gemBurst.update(dt);
@@ -264,6 +317,17 @@ export class GemSystem {
     this.group.position.copy(this.basePosition);
     this.outerMesh.rotation.set(0, 0, 0);
     this.innerMesh.rotation.set(0, 0, 0);
+    this.outerMesh.scale.set(0.85, 1.35, 0.85);
+    this.innerMesh.scale.set(1, 1, 1);
+    this.outerMat.opacity = 0.92;
+    this.innerMat.opacity = 0.88;
+    this.innerMesh.visible = true;
+    this.outerMesh.visible = true;
+    this.haloMesh.visible = true;
+    this.rippleMesh.visible = false;
+    this.orbitPoints.visible = true;
+    this.hitMesh.visible = true;
+    this.gemLight.intensity = 1.15;
     this.gemBurst.reset();
   }
 

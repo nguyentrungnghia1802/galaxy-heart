@@ -14,8 +14,8 @@ export class GemBurst {
     const seed = options.seed ?? 0x47454d42; // "GEMB"
     const random = createSeededRandom(seed);
 
-    // 1. Shockwave Ring
-    const ringGeo = new THREE.RingGeometry(0.08, 0.28, 48);
+    // 1. Shockwave Ring (Subtle radiant ripple ring)
+    const ringGeo = new THREE.RingGeometry(0.04, 0.16, 48);
     this.ringMat = new THREE.MeshBasicMaterial({
       color: 0xff6b99,
       transparent: true,
@@ -43,13 +43,13 @@ export class GemBurst {
     for (let i = 0; i < SPARKLE_COUNT; i++) {
       const theta = random() * Math.PI * 2;
       const phi = Math.acos(random() * 2 - 1);
-      const speed = 1.4 + random() * 2.8;
+      const speed = 1.0 + random() * 2.0;
 
       this.sparkleVelocities[i * 3 + 0] = Math.sin(phi) * Math.cos(theta) * speed;
       this.sparkleVelocities[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * speed;
       this.sparkleVelocities[i * 3 + 2] = Math.cos(phi) * speed;
 
-      this.sparkleScales[i] = 0.8 + random() * 1.2;
+      this.sparkleScales[i] = 0.6 + random() * 0.8;
       this.sparklePhases[i] = random() * Math.PI * 2;
     }
 
@@ -60,8 +60,8 @@ export class GemBurst {
     );
 
     this.sparkleMat = new THREE.PointsMaterial({
-      color: 0xfff0f6,
-      size: 0.16,
+      color: 0xffeef5,
+      size: 0.09,
       transparent: true,
       opacity: 0,
       blending: THREE.AdditiveBlending,
@@ -75,14 +75,14 @@ export class GemBurst {
     // 3. Mini Petal Burst (InstancedMesh)
     const miniPetalShape = new THREE.Shape();
     miniPetalShape.moveTo(0, 0);
-    miniPetalShape.bezierCurveTo(0.04, 0.06, 0.05, 0.12, 0, 0.16);
-    miniPetalShape.bezierCurveTo(-0.05, 0.12, -0.04, 0.06, 0, 0);
+    miniPetalShape.bezierCurveTo(0.024, 0.036, 0.03, 0.07, 0, 0.095);
+    miniPetalShape.bezierCurveTo(-0.03, 0.07, -0.024, 0.036, 0, 0);
     const miniPetalGeo = new THREE.ShapeGeometry(miniPetalShape);
 
     this.miniPetalMat = new THREE.MeshPhysicalMaterial({
       color: 0xff2558,
-      emissive: 0x900d2d,
-      emissiveIntensity: 0.9,
+      emissive: 0x5a0818,
+      emissiveIntensity: 0.35,
       roughness: 0.35,
       side: THREE.DoubleSide,
       transparent: true,
@@ -106,19 +106,19 @@ export class GemBurst {
     for (let i = 0; i < MINI_PETAL_COUNT; i++) {
       const angle = (i / MINI_PETAL_COUNT) * Math.PI * 2 + (random() - 0.5) * 0.4;
       const elevation = (random() - 0.5) * 0.8;
-      const speed = 1.0 + random() * 2.2;
+      const speed = 0.8 + random() * 1.6;
 
       this.petalVel[i * 3 + 0] = Math.cos(angle) * speed;
-      this.petalVel[i * 3 + 1] = elevation * speed + 0.4;
+      this.petalVel[i * 3 + 1] = elevation * speed + 0.3;
       this.petalVel[i * 3 + 2] = Math.sin(angle) * speed;
 
       this.petalRot[i * 3 + 0] = random() * Math.PI * 2;
       this.petalRot[i * 3 + 1] = random() * Math.PI * 2;
       this.petalRot[i * 3 + 2] = random() * Math.PI * 2;
 
-      this.petalRotSpeed[i * 3 + 0] = (random() - 0.5) * 6;
-      this.petalRotSpeed[i * 3 + 1] = (random() - 0.5) * 6;
-      this.petalRotSpeed[i * 3 + 2] = (random() - 0.5) * 6;
+      this.petalRotSpeed[i * 3 + 0] = (random() - 0.5) * 5;
+      this.petalRotSpeed[i * 3 + 1] = (random() - 0.5) * 5;
+      this.petalRotSpeed[i * 3 + 2] = (random() - 0.5) * 5;
     }
 
     this.dummyMatrix = new THREE.Matrix4();
@@ -134,23 +134,23 @@ export class GemBurst {
     this.active = true;
     this.elapsed = 0;
 
-    // Reset shockwaves
+    // Reset shockwaves with refined soft initial opacity
     this.shockwave.visible = true;
     this.shockwave.scale.set(0.1, 0.1, 0.1);
     this.shockwaveV.visible = true;
     this.shockwaveV.scale.set(0.1, 0.1, 0.1);
     this.shockwaveV.rotation.y = Math.PI * 0.25;
-    this.ringMat.opacity = 1.0;
+    this.ringMat.opacity = 0.45;
 
-    // Reset sparkles
+    // Reset sparkles with delicate twinkle
     this.sparkles.visible = true;
-    this.sparkleMat.opacity = 1.0;
+    this.sparkleMat.opacity = 0.65;
     this.sparklePositions.fill(0);
     this.sparkles.geometry.attributes.position.needsUpdate = true;
 
     // Reset mini petals
     this.miniPetals.visible = true;
-    this.miniPetalMat.opacity = 1.0;
+    this.miniPetalMat.opacity = 0.85;
     this.petalPos.fill(0);
 
     for (let i = 0; i < MINI_PETAL_COUNT; i++) {
@@ -170,11 +170,11 @@ export class GemBurst {
     this.elapsed += dt;
     const progress = clamp(this.elapsed / this.duration, 0, 1);
 
-    // 1. Shockwaves expansion & fade
-    const shockScale = lerp(0.2, 4.2, Math.pow(progress, 0.45));
+    // 1. Shockwaves expansion & fade (subtle, non-blinding)
+    const shockScale = lerp(0.15, 2.6, Math.pow(progress, 0.45));
     this.shockwave.scale.set(shockScale, shockScale, shockScale);
     this.shockwaveV.scale.set(shockScale * 0.85, shockScale * 0.85, shockScale * 0.85);
-    this.ringMat.opacity = Math.max(0, Math.pow(1 - progress, 1.8));
+    this.ringMat.opacity = Math.max(0, 0.45 * Math.pow(1 - progress, 1.8));
 
     // 2. Sparkles propagation
     const sparkleDecay = Math.max(0, 1 - Math.pow(progress, 1.4));

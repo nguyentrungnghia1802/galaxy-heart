@@ -8,7 +8,7 @@ export class LoveTextSystem {
   constructor(options = {}) {
     this.group = new THREE.Group();
     this.camera = options.camera ?? null;
-    this.basePosition = new THREE.Vector3(0, 0.82, 0.15);
+    this.basePosition = new THREE.Vector3(0, 0.08, 0.20);
     this.group.position.copy(this.basePosition);
     this.time = 0;
     this.revealProgress = 0;
@@ -18,48 +18,49 @@ export class LoveTextSystem {
     const loader = new FontLoader();
     this.font = loader.parse(fontData);
 
-    // 1. Text Geometry
+    // 1. Text Geometry with crisp bevel contours
     const textGeo = new TextGeometry('I love you!', {
       font: this.font,
-      size: 0.38,
-      depth: 0.065,
+      size: 0.36,
+      depth: 0.058,
       curveSegments: 12,
       bevelEnabled: true,
-      bevelThickness: 0.016,
-      bevelSize: 0.008,
+      bevelThickness: 0.014,
+      bevelSize: 0.007,
       bevelOffset: 0,
       bevelSegments: 4,
     });
     textGeo.computeBoundingBox();
     textGeo.center();
 
-    // 2. Dual-Tone Romantic Materials (face = radiant blush-white, sides = glowing ruby-rose)
+    // 2. Dual-Tone Romantic Materials (face = soft velvety warm blush, sides = deep ruby-rose bevels)
+    // Softened ~40% to preserve crisp character readability and prevent bloom washout
     this.faceMat = new THREE.MeshPhysicalMaterial({
       color: 0xfff6f9,
-      emissive: 0x3d0b1a,
-      emissiveIntensity: 0.4,
-      roughness: 0.18,
-      metalness: 0.1,
+      emissive: 0x240610,
+      emissiveIntensity: 0.16,
+      roughness: 0.22,
+      metalness: 0.08,
       clearcoat: 0.9,
       clearcoatRoughness: 0.08,
       side: THREE.FrontSide,
     });
 
     this.sideMat = new THREE.MeshPhysicalMaterial({
-      color: 0xeb1d53,
-      emissive: 0x8f0c2c,
-      emissiveIntensity: 0.8,
+      color: 0xd91f52,
+      emissive: 0x440816,
+      emissiveIntensity: 0.32,
       roughness: 0.28,
-      metalness: 0.15,
-      clearcoat: 0.6,
+      metalness: 0.12,
+      clearcoat: 0.5,
       side: THREE.FrontSide,
     });
 
     this.textMesh = new THREE.Mesh(textGeo, [this.faceMat, this.sideMat]);
     this.group.add(this.textMesh);
 
-    // 3. Ambient Text Soft Point Light
-    this.textLight = new THREE.PointLight(0xff4070, 0, 4.0, 2.0);
+    // 3. Ambient Text Soft Point Light (delicate front illumination)
+    this.textLight = new THREE.PointLight(0xff4572, 0, 3.2, 2.0);
     this.textLight.position.set(0, 0, 0.3);
     this.group.add(this.textLight);
 
@@ -91,20 +92,19 @@ export class LoveTextSystem {
       return;
     }
 
-    // 1. Reveal Animation (scale up + vertical float + bloom surge)
+    // 1. Reveal Animation (scale up + smooth emergence into center focus)
     const t = easeOutCubic(this.revealProgress);
-    // Emerge from gem level (y: 0.2) to resting level (y: 0.68)
-    const currentY = lerp(0.25, this.basePosition.y, t);
-    // Slight overshooting scale for cinematic presence (up to 1.05 then settle to 1.0)
+    // Emerge smoothly from slightly below center to resting center level (y: 0.08)
+    const currentY = lerp(-0.06, this.basePosition.y, t);
     const scaleFactor =
       this.revealProgress < 1.0
-        ? lerp(0.05, 1.05, Math.sin(t * Math.PI * 0.5))
+        ? lerp(0.1, 1.02, Math.sin(t * Math.PI * 0.5))
         : 1.0;
 
     // 2. Continuous Living Floating Micro-Motion in End State
-    const floatBob = Math.sin(this.time * 1.5) * 0.022;
-    const swayY = Math.sin(this.time * 0.9) * 0.028;
-    const tiltX = -0.05 + Math.cos(this.time * 1.2) * 0.018;
+    const floatBob = Math.sin(this.time * 1.5) * 0.018;
+    const swayY = Math.sin(this.time * 0.9) * 0.022;
+    const tiltX = -0.04 + Math.cos(this.time * 1.2) * 0.014;
 
     this.group.position.y = currentY + floatBob;
     this.group.position.z = this.basePosition.z;
@@ -118,16 +118,16 @@ export class LoveTextSystem {
         ? window.innerWidth / window.innerHeight
         : 1);
     const responsiveScale = aspect < 1.0 ? clamp(aspect * 1.35, 0.62, 1.0) : 1.0;
-    const breath = 1.0 + Math.sin(this.time * 2.0) * 0.018;
+    const breath = 1.0 + Math.sin(this.time * 2.0) * 0.015;
     const s = scaleFactor * breath * responsiveScale;
     this.group.scale.set(s, s, s);
 
-    // 4. Lighting & Emissive Flare during reveal, settling into warm glow
+    // 4. Subtle romantic lighting ramp during reveal, settling into soft warm radiance
     const flashBoost =
-      state === 'LOVE_REVEAL' ? Math.sin(progress * Math.PI) * 1.8 : 0;
-    this.faceMat.emissiveIntensity = 0.4 + flashBoost * 0.6;
-    this.sideMat.emissiveIntensity = 0.8 + flashBoost * 1.2;
-    this.textLight.intensity = (1.8 + flashBoost * 3.0) * t;
+      state === 'LOVE_REVEAL' ? Math.sin(progress * Math.PI) * 0.35 : 0;
+    this.faceMat.emissiveIntensity = 0.16 + flashBoost * 0.22;
+    this.sideMat.emissiveIntensity = 0.32 + flashBoost * 0.38;
+    this.textLight.intensity = (1.12 + flashBoost * 0.8) * t;
   }
 
   reset() {

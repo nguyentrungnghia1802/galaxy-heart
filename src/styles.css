@@ -228,3 +228,262 @@ canvas {
   line-height: 1.5;
 }
 
+/* ==========================================================================
+   2D Minecraft Pixel Heart Intro Screen & Curtain Split Transition
+   ========================================================================== */
+.intro-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.curtain-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.curtain-left {
+  left: 0;
+  width: calc(50% + 1px);
+  background: linear-gradient(
+    135deg,
+    #1c020a 0%,
+    #0e0106 50%,
+    #050002 100%
+  );
+  border-right: 1px solid rgba(255, 75, 120, 0.2);
+  box-shadow: inset -15px 0 35px rgba(0, 0, 0, 0.7);
+  transform: translateX(0);
+}
+
+.curtain-right {
+  right: 0;
+  width: calc(50% + 1px);
+  background: linear-gradient(
+    225deg,
+    #1c020a 0%,
+    #0e0106 50%,
+    #050002 100%
+  );
+  border-left: 1px solid rgba(255, 75, 120, 0.2);
+  box-shadow: inset 15px 0 35px rgba(0, 0, 0, 0.7);
+  transform: translateX(0);
+}
+
+.intro-seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 80, 120, 0.25) 20%,
+    rgba(255, 140, 180, 0.75) 50%,
+    rgba(255, 80, 120, 0.25) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 0 16px rgba(255, 60, 110, 0.45);
+  transition: opacity 0.35s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.intro-content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.2rem;
+  padding: 2rem;
+  pointer-events: auto;
+  transition: opacity 0.8s cubic-bezier(0.2, 1, 0.3, 1),
+              transform 1.8s cubic-bezier(0.2, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.pixel-heart-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pixelHeartFloat 3.2s ease-in-out infinite;
+  filter: drop-shadow(0 10px 28px rgba(230, 20, 65, 0.4))
+          drop-shadow(0 0 16px rgba(255, 80, 130, 0.25));
+  will-change: transform;
+}
+
+.pixel-heart-svg {
+  display: block;
+  width: 104px;
+  height: 91px;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+@keyframes pixelHeartFloat {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-14px) scale(1.04);
+  }
+}
+
+.open-heart-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.85rem 2.25rem;
+  min-height: 52px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 120, 160, 0.55);
+  background: linear-gradient(
+    135deg,
+    rgba(80, 8, 32, 0.88) 0%,
+    rgba(40, 3, 16, 0.94) 100%
+  );
+  color: #fff0f5;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(230, 20, 65, 0.35), 0 0 16px rgba(255, 50, 100, 0.2);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease,
+              background 0.25s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.open-heart-button:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: rgba(255, 175, 205, 0.85);
+  background: linear-gradient(
+    135deg,
+    rgba(110, 12, 44, 0.92) 0%,
+    rgba(60, 5, 25, 0.96) 100%
+  );
+  box-shadow: 0 12px 38px rgba(255, 30, 80, 0.5), 0 0 24px rgba(255, 80, 130, 0.35);
+  color: #ffffff;
+}
+
+.open-heart-button:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 4px 16px rgba(200, 15, 55, 0.4);
+}
+
+.open-heart-button:focus-visible {
+  outline: 2px solid #ff7b9f;
+  outline-offset: 4px;
+}
+
+.open-heart-icon {
+  display: inline-flex;
+  color: #ff3366;
+  filter: drop-shadow(0 0 6px rgba(255, 51, 102, 0.6));
+  transition: transform 0.3s ease;
+}
+
+.open-heart-button:hover .open-heart-icon {
+  transform: scale(1.15);
+}
+
+/* Frozen State (~1s freeze before transition) */
+.intro-screen.is-frozen {
+  pointer-events: none;
+}
+
+.intro-screen.is-frozen .pixel-heart-wrapper {
+  animation-play-state: paused !important;
+}
+
+.intro-screen.is-frozen .open-heart-button {
+  pointer-events: none;
+  transform: scale(0.98);
+  border-color: rgba(255, 180, 215, 0.9);
+  box-shadow: 0 0 32px rgba(255, 75, 120, 0.65), inset 0 0 14px rgba(255, 100, 150, 0.4);
+}
+
+.intro-screen.is-frozen .intro-seam {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 150, 190, 0.6) 20%,
+    rgba(255, 230, 245, 0.95) 50%,
+    rgba(255, 150, 190, 0.6) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 0 24px rgba(255, 100, 150, 0.8), 0 0 48px rgba(255, 40, 90, 0.5);
+}
+
+/* Splitting Curtain Transition (~2s horizontal pull) */
+.intro-screen.is-splitting {
+  pointer-events: none;
+}
+
+.intro-screen.is-splitting .curtain-left {
+  transform: translateX(-100%);
+  transition: transform 2.0s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.intro-screen.is-splitting .curtain-right {
+  transform: translateX(100%);
+  transition: transform 2.0s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.intro-screen.is-splitting .intro-seam {
+  opacity: 0;
+  transition: opacity 0.35s ease-out;
+}
+
+.intro-screen.is-splitting .intro-content {
+  opacity: 0;
+  transform: scale(0.88);
+  transition: opacity 0.75s ease-out, transform 1.8s cubic-bezier(0.65, 0, 0.35, 1);
+  pointer-events: none;
+}
+
+@media (max-width: 480px) {
+  .pixel-heart-svg {
+    width: 88px;
+    height: 77px;
+  }
+
+  .intro-content {
+    gap: 1.8rem;
+    padding: 1.5rem;
+  }
+
+  .open-heart-button {
+    padding: 0.8rem 1.85rem;
+    font-size: 0.98rem;
+    min-height: 48px;
+  }
+}
+
+

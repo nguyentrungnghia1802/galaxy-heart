@@ -18,6 +18,85 @@
   </head>
   <body>
     <main id="app">
+      <!-- 2D Minecraft Pixel Heart Intro Screen with Curtain Split -->
+      <div id="intro-screen" class="intro-screen">
+        <div class="curtain-panel curtain-left" aria-hidden="true"></div>
+        <div class="curtain-panel curtain-right" aria-hidden="true"></div>
+        <div class="intro-seam" aria-hidden="true"></div>
+        <div class="intro-content">
+          <div class="pixel-heart-wrapper">
+            <svg class="pixel-heart-svg" viewBox="0 0 16 14" width="96" height="84" aria-label="Pixel Heart" shape-rendering="crispEdges">
+              <!-- Pixel Grid (16x14): Border, Shading, Highlights & Ruby Core -->
+              <!-- Outer Border -->
+              <rect x="3" y="1" width="3" height="1" fill="#1b0207" />
+              <rect x="10" y="1" width="3" height="1" fill="#1b0207" />
+              <rect x="2" y="2" width="1" height="1" fill="#1b0207" />
+              <rect x="6" y="2" width="1" height="1" fill="#1b0207" />
+              <rect x="9" y="2" width="1" height="1" fill="#1b0207" />
+              <rect x="13" y="2" width="1" height="1" fill="#1b0207" />
+              <rect x="1" y="3" width="1" height="1" fill="#1b0207" />
+              <rect x="7" y="3" width="2" height="1" fill="#1b0207" />
+              <rect x="14" y="3" width="1" height="1" fill="#1b0207" />
+              <rect x="0" y="4" width="1" height="3" fill="#1b0207" />
+              <rect x="15" y="4" width="1" height="3" fill="#1b0207" />
+              <rect x="1" y="7" width="1" height="1" fill="#1b0207" />
+              <rect x="14" y="7" width="1" height="1" fill="#1b0207" />
+              <rect x="2" y="8" width="1" height="1" fill="#1b0207" />
+              <rect x="13" y="8" width="1" height="1" fill="#1b0207" />
+              <rect x="3" y="9" width="1" height="1" fill="#1b0207" />
+              <rect x="12" y="9" width="1" height="1" fill="#1b0207" />
+              <rect x="4" y="10" width="1" height="1" fill="#1b0207" />
+              <rect x="11" y="10" width="1" height="1" fill="#1b0207" />
+              <rect x="5" y="11" width="1" height="1" fill="#1b0207" />
+              <rect x="10" y="11" width="1" height="1" fill="#1b0207" />
+              <rect x="6" y="12" width="1" height="1" fill="#1b0207" />
+              <rect x="9" y="12" width="1" height="1" fill="#1b0207" />
+              <rect x="7" y="13" width="2" height="1" fill="#1b0207" />
+
+              <!-- Primary Red / Ruby Fill -->
+              <rect x="3" y="2" width="3" height="1" fill="#e8184d" />
+              <rect x="10" y="2" width="3" height="1" fill="#d91444" />
+              <rect x="2" y="3" width="5" height="1" fill="#e8184d" />
+              <rect x="9" y="3" width="5" height="1" fill="#d91444" />
+              <rect x="1" y="4" width="13" height="1" fill="#e8184d" />
+              <rect x="1" y="5" width="13" height="1" fill="#e01649" />
+              <rect x="1" y="6" width="13" height="1" fill="#d41444" />
+              <rect x="2" y="7" width="11" height="1" fill="#c9123f" />
+              <rect x="3" y="8" width="9" height="1" fill="#bd103b" />
+              <rect x="4" y="9" width="7" height="1" fill="#b00e36" />
+              <rect x="5" y="10" width="5" height="1" fill="#9e0c30" />
+              <rect x="6" y="11" width="3" height="1" fill="#8c0a2a" />
+              <rect x="7" y="12" width="2" height="1" fill="#7a0824" />
+
+              <!-- Highlights / Specular Glint -->
+              <rect x="3" y="2" width="2" height="1" fill="#ffffff" />
+              <rect x="2" y="3" width="2" height="1" fill="#ffffff" />
+              <rect x="4" y="3" width="1" height="1" fill="#ffb8cc" />
+              <rect x="2" y="4" width="1" height="1" fill="#ffb8cc" />
+              <rect x="3" y="4" width="1" height="1" fill="#ffffff" />
+              <rect x="10" y="2" width="2" height="1" fill="#ff8aa8" />
+
+              <!-- Deep Edge Shadows -->
+              <rect x="14" y="4" width="1" height="3" fill="#6d0620" />
+              <rect x="13" y="7" width="1" height="1" fill="#6d0620" />
+              <rect x="12" y="8" width="1" height="1" fill="#6d0620" />
+              <rect x="11" y="9" width="1" height="1" fill="#6d0620" />
+              <rect x="10" y="10" width="1" height="1" fill="#6d0620" />
+              <rect x="9" y="11" width="1" height="1" fill="#6d0620" />
+              <rect x="8" y="12" width="1" height="1" fill="#6d0620" />
+            </svg>
+          </div>
+          <button id="open-heart-btn" class="open-heart-button" type="button" aria-label="Mở cửa trái tim">
+            <span class="open-heart-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </span>
+            <span class="open-heart-text">Mở cửa trái tim</span>
+          </button>
+        </div>
+      </div>
+
       <div id="loading" class="status-overlay" role="status" aria-live="polite">
         <div class="loader-pulse"></div>
         <span class="loader-text">Preparing petals…</span>

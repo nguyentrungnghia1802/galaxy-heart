@@ -175,6 +175,27 @@ export class GemSystem {
       state === 'LOVE_REVEAL' ||
       state === 'END';
 
+    const isHeartIntact =
+      state === 'BOOT' ||
+      state === 'PRELOAD' ||
+      state === 'INTRO' ||
+      state === 'HEART_IDLE' ||
+      state === 'HEARTBEAT' ||
+      state === 'RAPID_HEARTBEAT' ||
+      state === 'TENSION';
+
+    // When heart is intact, gem is completely concealed inside the heart petals
+    if (isHeartIntact) {
+      this.innerMesh.visible = false;
+      this.outerMesh.visible = false;
+      this.haloMesh.visible = false;
+      this.rippleMesh.visible = false;
+      this.orbitPoints.visible = false;
+      this.hitMesh.visible = false;
+      this.gemLight.intensity = 0;
+      return;
+    }
+
     // Disappearance logic: after gem activation, gem dissolves and vanishes completely
     if (state === 'LOVE_REVEAL' || state === 'END') {
       this.innerMesh.visible = false;
@@ -190,6 +211,23 @@ export class GemSystem {
 
     let disappearScale = 1.0;
     let disappearAlpha = 1.0;
+
+    // During explosion, gem emerges as petals blast outward
+    if (state === 'EXPLOSION') {
+      const emergeProgress = clamp((progress - 0.2) / 0.8, 0, 1);
+      if (emergeProgress <= 0) {
+        this.innerMesh.visible = false;
+        this.outerMesh.visible = false;
+        this.haloMesh.visible = false;
+        this.rippleMesh.visible = false;
+        this.orbitPoints.visible = false;
+        this.hitMesh.visible = false;
+        this.gemLight.intensity = 0;
+        return;
+      }
+      disappearScale = emergeProgress;
+      disappearAlpha = emergeProgress;
+    }
 
     if (state === 'GEM_BURST') {
       // Gentle activation pulse, then smooth prompt shrink and fade to zero

@@ -177,14 +177,34 @@ export function createHeartAnchors({ count, seed }) {
       radiusFactor = 0.65 + random() * 0.29;
       sample = createSurfaceSample(angle, latitudeSin, radiusFactor);
     } else {
-      // Inner core filling the deep interior
-      const progress = (localIndex + 0.5) / localCount;
-      const longitudeFraction =
-        ((localIndex * GOLDEN_RATIO_STEP + 0.67 + (random() - 0.5) * 0.08) % 1 + 1) % 1;
-      const angle = angleAtArcFraction(longitudeFraction);
-      const latitudeSin = (random() * 2 - 1) * 0.82;
-      radiusFactor = 0.24 + random() * 0.42;
-      sample = createSurfaceSample(angle, latitudeSin, radiusFactor);
+      // Inner core filling the deep interior and central front shield
+      const isCenterFrontShield = localIndex % 3 === 0;
+      if (isCenterFrontShield) {
+        // Specifically place overlapping petals directly in front of the center gem to bury it deep inside
+        const theta = random() * TAU;
+        const r = 0.06 + random() * 0.24;
+        const posX = Math.cos(theta) * r;
+        const posY = SURFACE_CENTER_Y + Math.sin(theta) * r * 0.85;
+        const posZ = 0.18 + random() * 0.32;
+        const normLen = Math.hypot(posX, posY - SURFACE_CENTER_Y, posZ) || 1;
+        sample = {
+          position: { x: posX, y: posY, z: posZ },
+          normal: {
+            x: posX / normLen,
+            y: (posY - SURFACE_CENTER_Y) / normLen,
+            z: posZ / normLen,
+          },
+        };
+        radiusFactor = 0.55;
+      } else {
+        const progress = (localIndex + 0.5) / localCount;
+        const longitudeFraction =
+          ((localIndex * GOLDEN_RATIO_STEP + 0.67 + (random() - 0.5) * 0.08) % 1 + 1) % 1;
+        const angle = angleAtArcFraction(longitudeFraction);
+        const latitudeSin = (random() * 2 - 1) * 0.82;
+        radiusFactor = 0.24 + random() * 0.42;
+        sample = createSurfaceSample(angle, latitudeSin, radiusFactor);
+      }
     }
 
     if (layer !== 'shell') {

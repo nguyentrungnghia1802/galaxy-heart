@@ -113,4 +113,25 @@ describe('GemSystem', () => {
 
     gem.dispose();
   });
+
+  it('remains concealed inside the heart while heart is intact', () => {
+    const gem = new GemSystem();
+
+    gem.update(0.016, { state: 'HEART_IDLE', progress: 0.5 });
+    expect(gem.outerMesh.visible).toBe(false);
+    expect(gem.innerMesh.visible).toBe(false);
+    expect(gem.gemLight.intensity).toBe(0);
+
+    gem.update(0.016, { state: 'HEARTBEAT', progress: 0.5 });
+    expect(gem.outerMesh.visible).toBe(false);
+
+    gem.update(0.016, { state: 'TENSION', progress: 0.5 });
+    expect(gem.outerMesh.visible).toBe(false);
+
+    // Reveals upon explosion and flight
+    gem.update(0.016, { state: 'PETAL_FLIGHT', progress: 0.5 });
+    expect(gem.outerMesh.visible).toBe(true);
+
+    gem.dispose();
+  });
 });

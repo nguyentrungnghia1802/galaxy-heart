@@ -21,14 +21,20 @@ function isWebGLAvailable() {
 const container = document.querySelector('#app');
 const fallbackEl = document.querySelector('#fallback');
 const loadingEl = document.querySelector('#loading');
+const introScreenEl = document.querySelector('#intro-screen');
+const openHeartBtn = document.querySelector('#open-heart-btn');
 
 if (!isWebGLAvailable()) {
   if (loadingEl) loadingEl.hidden = true;
+  if (introScreenEl) introScreenEl.hidden = true;
   if (fallbackEl) fallbackEl.hidden = false;
 } else {
   const params = new URLSearchParams(window.location.search);
   const debugSpeed = import.meta.env.DEV ? Number(params.get('debugSpeed')) : 1;
   const debugQuality = import.meta.env.DEV ? params.get('quality') : null;
+  const skipIntro = params.get('skipIntro') === 'true';
+  const jumpState = import.meta.env.DEV ? params.get('jumpState') : null;
+
   const durations =
     debugSpeed > 1
       ? Object.fromEntries(
@@ -43,7 +49,7 @@ if (!isWebGLAvailable()) {
 
   const assetLoader = new AssetLoader();
   const petalTextureUrl = `${import.meta.env.BASE_URL}assets/textures/petal.webp`;
-  assetLoader
+  const assetsPromise = assetLoader
     .loadAll([{ id: 'petal', type: 'texture', url: petalTextureUrl }])
     .then((assets) => {
       if (assets.petal) {
@@ -52,14 +58,50 @@ if (!isWebGLAvailable()) {
     })
     .catch((err) => {
       console.warn('Asset preload warning:', err);
-    })
-    .finally(() => {
+    });
+
+  let appStarted = false;
+  const launchMainScene = () => {
+    if (appStarted) return;
+    appStarted = true;
+    assetsPromise.finally(() => {
       app.start();
-      const jumpState = import.meta.env.DEV ? params.get('jumpState') : null;
       if (jumpState && typeof app.stateMachine?.transitionTo === 'function') {
         app.stateMachine.transitionTo(jumpState);
       }
     });
+  };
+
+  if (skipIntro || !introScreenEl || !openHeartBtn) {
+    if (introScreenEl) {
+      introScreenEl.style.display = 'none';
+      introScreenEl.hidden = true;
+    }
+    launchMainScene();
+  } else {
+    let openingStarted = false;
+    openHeartBtn.addEventListener('click', () => {
+      if (openingStarted) return;
+      openingStarted = true;
+
+      // 1. Intro screen freezes completely for ~1 second
+      introScreenEl.classList.add('is-frozen');
+
+      // 2. After ~1s freeze, split screen horizontally to both sides (~2 seconds)
+      setTimeout(() => {
+        introScreenEl.classList.remove('is-frozen');
+        introScreenEl.classList.add('is-splitting');
+        // Main scene starts running automatically
+        launchMainScene();
+
+        // 3. After ~2s curtain split transition (3s total), hide and cleanup intro screen
+        setTimeout(() => {
+          introScreenEl.style.display = 'none';
+          introScreenEl.hidden = true;
+        }, 2000);
+      }, 1000);
+    });
+  }
 
   if (import.meta.env.DEV) {
     window.__PETAL_HEART_APP__ = app;

@@ -981,27 +981,30 @@ Chỉ đánh dấu mục này khi B07 hoàn tất:
 ### Checklist hoàn thành
 
 - [x] **1. Màu sắc & Chất liệu:**
-  - Bảng màu 10 biến thể tự nhiên từ Deep Wine Crimson (`#6e051c`), Burgundy (`#8c0a2a`), Crimson Red (`#b40e36`), Ruby Red (`#cc1642`), Scarlet Rose (`#e1224d`), Deep Coral (`#ea3a60`), Vibrant Rose Pink (`#f2547b`), Hot Pink (`#f77298`), Soft Blossom Pink (`#fca1b7`), đến Luminous Blush Highlight (`#ffbccc`).
-  - Cánh hoa cupped 3D hữu cơ 12-vertex / 12-triangle với 2 thùy cong tự nhiên, độ cong Z sâu và normal tính toán chính xác.
-  - Material nhung mượt mà (`roughness: 0.42`), specular sheen tinh tế, `alphaTest: 0.05` chống overdraw banding.
+  - Bảng màu 12 biến thể tự nhiên từ Deep Velvet Wine (`#4c0312`), Rich Wine (`#6e051c`), Ruby (`#8c0826`, `#ad0a32`), Radiant Crimson Rose (`#cc0e3d`), Vivid Scarlet Rose (`#e41448`), Bright Rose (`#f42459`), Radiant Coral (`#ff3d75`), Vibrant Hot Pink Highlights (`#ff487e`, `#ff5285`), đến Soft Blush Pink (`#ff8da8`) và Luminous Petal Edge (`#ffc8d8`).
+  - Phân bổ màu có chủ đích theo lớp: Lõi sâu mang sắc burgundy/wine sâu thẳm, vỏ bề mặt mang sắc scarlet rực rỡ và ~24% cánh hoa đón sáng mang sắc hồng phát sáng (luminous pink highlights) đúng như ảnh reference.
+  - Cánh hoa cupped 3D hữu cơ 12-vertex với độ nghiêng pitch & roll tự nhiên (0.18–0.34 rad) tạo cấu trúc cánh xếp lớp, đón sáng chân thực thay vì dán phẳng.
+  - Material nhung mượt mà (`roughness: 0.48`, `sheen: 0.92`, `sheenColor: 0xff7a9c`, `clearcoat: 0.08`, `emissive: 0x4a0414`).
 - [x] **2. Trái tim dày, kín, không rỗng bên trong:**
-  - Cải tiến `HeartSurface.js` với thuật toán phân bố 3 tầng thể tích (3-layer volumetric stratified distribution):
-    - Tầng 1: Vỏ ngoài (Outer Shell) ~55% định hình silhouette trái tim kinh điển.
-    - Tầng 2: Lớp đệm giữa (Mantle) ~30% với bán kính thu vào $r \in [0.45, 0.85]$.
-    - Tầng 3: Lõi bên trong (Inner Core) ~15% lấp đầy hoàn toàn lòng tim với $r \in [0.15, 0.50]$.
-  - Bảo toàn tuyệt đối silhouette trái tim khi nhìn trực diện và tạo chiều sâu đa tầng khi có parallax.
-- [x] **3. Cánh hoa bay / lơ lửng bên ngoài khi tim còn nguyên vẹn:**
-  - Tách ~6% cánh hoa thành ambient floating petals trôi bồng bềnh xung quanh tim và tiền cảnh (foreground bokeh).
-  - Tích hợp 3D harmonic drift mượt mà theo thời gian: chuyển động trôi lơ lửng hữu cơ, không đứng im.
-  - Khi kích hoạt `EXPLOSION`, toàn bộ cánh hoa (cả bám tim lẫn bay xung quanh) đều được tích hợp đồng nhất vào simulation vật lý.
-- [x] **4. Chuyển động vi mô (living micro-flutter) khi tim giữ hình:**
-  - Các cánh hoa bám tim có vi dao động góc nghiêng và flutter nhẹ theo nhịp heartbeat và noise seed riêng biệt.
-  - Vị trí gốc anchor được giữ nguyên để bảo đảm tính ổn định cấu trúc và invariant của test.
-  - Tạo cảm giác "đã mắt", tự nhiên, như một đóa hoa sống đang thở.
+  - Phân bố xoắn ốc tỷ lệ vàng (Golden-Ratio Spiral distribution) loại bỏ hoàn toàn hiện tượng phân tầng lưới (grid banding) và các khe hở rỗng.
+  - Lấp đầy hoàn toàn khe thùy trên và thung lũng tâm tim (central valley fill) bằng các lớp cánh hoa thể tích, loại bỏ toàn bộ khoảng trống nhìn xuyên qua nền đen.
+  - Mật độ cánh hoa phủ kín dày dặn với tỉ lệ diện tích bao phủ hoàn hảo (`PETAL_UNIT_SCALE = 0.235`).
+- [x] **3. Hệ thống 3 tầng cánh hoa bay lơ lửng:**
+  - Tầng A (Heart Halo ~50%): cánh hoa bay sát viền tim, tạo quầng hào quang tự nhiên.
+  - Tầng B (Midground ~35%): cánh hoa phân tán trong không gian 3D với chuyển động nhào lộn hữu cơ.
+  - Tầng C (Foreground Bokeh ~15%): cánh hoa lớn ở cự ly gần camera (`posZ: 2.0–3.6`, `scale: 1.65–2.9x`), được bố cục bám sát các góc và viền khung hình (corners & margins) để tạo chiều sâu ống kính điện ảnh mà không che khuất tâm tim.
+  - Bảo toàn 100% tính liên tục vật lý khi kích hoạt `EXPLOSION`: toàn bộ cánh hoa bay hòa quyện cùng cánh hoa nổ tung từ tim.
+- [x] **4. Chuyển động vi mô (living micro-motion):**
+  - Cánh hoa bám tim có vi rung góc nghiêng (leaf flutter) đa tần số kết hợp nhịp thở theo envelope của heartbeat.
+  - Tọa độ gốc anchor giữ nguyên tuyệt đối, không rung lắc làm méo hình tim.
 - [x] **5. Ánh sáng cinematic & hậu kỳ:**
-  - Tăng cường `innerLight` (cường độ 4.2, màu `0xff1a4e`) tỏa sáng rực rỡ từ tâm lòng tim xuyên qua các lớp cánh hoa thể tích.
-  - Tăng cường `rimLight` (cường độ 3.0, màu `0xff6a98`) tách rõ rệt viền cánh hoa và cánh hoa lơ lửng trên nền đen tuyền.
-  - Tăng cường `keyLight` (cường độ 3.5, màu `0xff4572`) và `groundLight` crimson pool reflection.
-  - Tinh chỉnh UnrealBloomPass (`threshold: 0.20`, `radius: 0.58`, `baseStrength: 0.62`) tạo hiệu ứng bloom nhung đỏ huyền ảo mà không làm đục nền đen.
+  - Đèn chiếu chính (Key light: 3.8, `0xff4068`) đặt góc chính diện tạo độ sáng rõ rệt cho cánh hoa mặt trước.
+  - Cặp đèn ven hai thùy (Dual-lobe rim lights: 3.2 & 2.8) tách silhouette sắc nét trên nền đen.
+  - Đèn đỉnh (Crown lobe light: 2.5, `0xff5580`) nhấn highlight rực rỡ lên đỉnh hai thùy tim.
+  - Đèn lõi tim (Inner core light: 4.8, `0xff1240`) tỏa sáng nồng nàn từ bên trong các kẽ cánh hoa.
+  - Đèn mũi tim (Ground point light: 3.2, `0xff1646`) rọi thẳng xuống vũng phản chiếu sàn.
+  - Sàn phản chiếu hữu cơ (Seamless crimson glow pool): loại bỏ hoàn toàn mặt phẳng vuông cắt ngang, thay bằng đĩa hào quang đỏ thắm phát sáng tụ ngay dưới mũi tim và tan biến êm dịu vào nền đen tuyệt đối.
+  - UnrealBloomPass cân chỉnh (`threshold: 0.25`, `radius: 0.52`, `baseStrength: 0.52`) tạo hào quang nhung đỏ mê hoặc mà không làm mờ chi tiết cánh hoa.
+
 
 

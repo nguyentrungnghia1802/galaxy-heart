@@ -4,40 +4,52 @@ export class LightingSystem {
   constructor(scene) {
     this.scene = scene;
 
-    // Subdued deep wine ambient light
-    this.ambientLight = new THREE.AmbientLight(0x320512, 1.1);
+    // Subdued deep wine ambient light to keep shadowed crevices from clipping pure black
+    this.ambientLight = new THREE.AmbientLight(0x3a0615, 1.25);
     scene.add(this.ambientLight);
 
-    // Key front-right directional light for petal highlights and depth
-    this.keyLight = new THREE.DirectionalLight(0xff4572, 3.5);
-    this.keyLight.position.set(2.6, 3.2, 4.0);
+    // Frontal key light for radiant petal highlights, surface textures and pink accents
+    this.keyLight = new THREE.DirectionalLight(0xff4068, 3.8);
+    this.keyLight.position.set(1.6, 2.0, 4.4);
     scene.add(this.keyLight);
 
-    // Rim/back directional light to silhouette the heart lobes and edges against the dark background
-    this.rimLight = new THREE.DirectionalLight(0xff6a98, 3.0);
-    this.rimLight.position.set(-2.8, 2.2, -3.2);
+    // Left-upper rim light to silhouette the left lobe against the dark backdrop
+    this.rimLight = new THREE.DirectionalLight(0xff6a94, 3.2);
+    this.rimLight.position.set(-2.2, 2.6, -2.8);
     scene.add(this.rimLight);
 
-    // Fill light from lower-left to soften deep shadows and illuminate interior petals
-    this.fillLight = new THREE.DirectionalLight(0xa01038, 1.6);
-    this.fillLight.position.set(-2.4, -0.8, 2.6);
+    // Right-upper rim light to sculpt the right lobe with matching luminous rim
+    this.rimLightRight = new THREE.DirectionalLight(0xff5880, 2.8);
+    this.rimLightRight.position.set(2.2, 2.6, -2.8);
+    scene.add(this.rimLightRight);
+
+    // Warm fill light from lower-left to soften deep shadows and illuminate interior petals
+    this.fillLight = new THREE.DirectionalLight(0xc01844, 2.2);
+    this.fillLight.position.set(-2.0, -0.6, 3.0);
     scene.add(this.fillLight);
 
-    // Inner glowing core point light at heart center (pulsates warmly from inside)
-    this.innerLight = new THREE.PointLight(0xff1a4e, 4.2, 4.8, 2.0);
-    this.innerLight.position.set(0, 0.05, 0);
+    // Inner glowing core point light at heart center (pulsates warmly from inside crevices)
+    this.innerLight = new THREE.PointLight(0xff1240, 4.8, 5.2, 2.0);
+    this.innerLight.position.set(0, -0.1, 0.05);
     scene.add(this.innerLight);
 
-    // Ground pool light casting crimson reflection under the heart tip
-    this.groundLight = new THREE.PointLight(0xeb1852, 2.8, 3.8, 2.0);
-    this.groundLight.position.set(0, -0.65, 0.35);
+    // Ground pool light casting radiant crimson illumination directly under the heart tip
+    this.groundLight = new THREE.PointLight(0xff1646, 3.2, 3.8, 2.0);
+    this.groundLight.position.set(0, -1.15, 0.35);
     scene.add(this.groundLight);
 
-    this.baseAmbientIntensity = 1.1;
-    this.baseKeyIntensity = 3.5;
-    this.baseInnerIntensity = 4.2;
-    this.baseGroundIntensity = 2.8;
-    this.baseRimIntensity = 3.0;
+    // Top lobe light to illuminate the upper crown and highlight individual lobe petals
+    this.lobeLight = new THREE.DirectionalLight(0xff5580, 2.5);
+    this.lobeLight.position.set(0, 3.8, 3.2);
+    scene.add(this.lobeLight);
+
+    this.baseAmbientIntensity = 1.25;
+    this.baseKeyIntensity = 3.8;
+    this.baseInnerIntensity = 4.8;
+    this.baseGroundIntensity = 3.2;
+    this.baseRimIntensity = 3.2;
+    this.baseRimRightIntensity = 2.8;
+    this.baseLobeIntensity = 2.5;
   }
 
   update(dt, stateSnapshot) {
@@ -47,10 +59,12 @@ export class LightingSystem {
 
     // Heartbeat glow modulation
     const pulseFactor = intensity * 1.25;
-    this.innerLight.intensity = this.baseInnerIntensity + pulseFactor * 2.4;
-    this.keyLight.intensity = this.baseKeyIntensity + pulseFactor * 0.75;
-    this.groundLight.intensity = this.baseGroundIntensity + pulseFactor * 1.3;
+    this.innerLight.intensity = this.baseInnerIntensity + pulseFactor * 2.6;
+    this.keyLight.intensity = this.baseKeyIntensity + pulseFactor * 0.8;
+    this.groundLight.intensity = this.baseGroundIntensity + pulseFactor * 1.4;
     this.rimLight.intensity = this.baseRimIntensity + pulseFactor * 0.5;
+    this.rimLightRight.intensity = this.baseRimRightIntensity + pulseFactor * 0.5;
+    this.lobeLight.intensity = this.baseLobeIntensity + pulseFactor * 0.6;
 
     if (state === 'TENSION') {
       // Light draws inward slightly before the release
@@ -62,9 +76,11 @@ export class LightingSystem {
       this.innerLight.intensity += flash * 4.5;
       this.keyLight.intensity += flash * 1.8;
       this.rimLight.intensity = this.baseRimIntensity + flash * 2.2;
+      this.rimLightRight.intensity = this.baseRimRightIntensity + flash * 2.2;
+      this.lobeLight.intensity = this.baseLobeIntensity + flash * 2.0;
     } else if (state === 'PETAL_FLIGHT') {
       // Dispersed romantic ambient illumination for flying cloud
-      this.ambientLight.intensity = 1.35;
+      this.ambientLight.intensity = 1.45;
       this.keyLight.intensity = this.baseKeyIntensity * 1.15;
       this.innerLight.intensity = Math.max(0.6, this.baseInnerIntensity * (1 - progress * 0.6));
     }
@@ -75,6 +91,8 @@ export class LightingSystem {
     this.keyLight.intensity = this.baseKeyIntensity;
     this.innerLight.intensity = this.baseInnerIntensity;
     this.rimLight.intensity = this.baseRimIntensity;
+    this.rimLightRight.intensity = this.baseRimRightIntensity;
+    this.lobeLight.intensity = this.baseLobeIntensity;
     this.groundLight.intensity = this.baseGroundIntensity;
   }
 
@@ -82,8 +100,11 @@ export class LightingSystem {
     this.ambientLight.removeFromParent();
     this.keyLight.removeFromParent();
     this.rimLight.removeFromParent();
+    this.rimLightRight.removeFromParent();
     this.fillLight.removeFromParent();
+    this.lobeLight.removeFromParent();
     this.innerLight.removeFromParent();
     this.groundLight.removeFromParent();
   }
 }
+

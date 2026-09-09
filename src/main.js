@@ -42,8 +42,9 @@ if (!isWebGLAvailable()) {
   const app = new App(container, { durations, qualityProfile });
 
   const assetLoader = new AssetLoader();
+  const petalTextureUrl = `${import.meta.env.BASE_URL}assets/textures/petal.webp`;
   assetLoader
-    .loadAll([{ id: 'petal', type: 'texture', url: '/assets/textures/petal.webp' }])
+    .loadAll([{ id: 'petal', type: 'texture', url: petalTextureUrl }])
     .then((assets) => {
       if (assets.petal) {
         app.petalSystem.setTexture(assets.petal);

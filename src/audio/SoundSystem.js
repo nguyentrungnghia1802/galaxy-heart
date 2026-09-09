@@ -34,13 +34,15 @@ export class SoundSystem {
 
     this.unlocked = false;
     this.muted = false;
-    this.masterVolume = options.volume ?? 0.50;
+    // Increased master volume from 0.50 to 1.0 for ~5x perceived acoustic presence
+    this.masterVolume = options.volume ?? 1.0;
 
     // Heartbeat pre-rendered acoustic buffers
     this.lubBuffer = null;
     this.dubBuffer = null;
     this.finalBeatBuffer = null;
     this.softBurstBuffer = null;
+    this.gemShimmerBuffer = null;
 
     // Heartbeat tracking
     this.lastHeartbeatPhase = -1;
@@ -48,6 +50,12 @@ export class SoundSystem {
     this.dubTriggered = false;
     this.finalBeatTriggered = false;
     this.explosionTriggered = false;
+
+    // Gem floating sound state
+    this.gemSourceNode = null;
+    this.gemGainNode = null;
+    this.gemPlaying = false;
+    this.gemSoundDisabled = false;
 
     // Active nodes tracking to prevent overlap
     this.activeSources = new Set();
@@ -73,13 +81,13 @@ export class SoundSystem {
     try {
       this.ctx = new this.audioContextClass();
 
-      // Master Compressor to prevent any clipping or volume spikes
+      // Master Peak Limiter (prevents any digital clipping or volume spikes while allowing ~5x perceived loudness)
       this.compressor = this.ctx.createDynamicsCompressor();
-      this.compressor.threshold.setValueAtTime(-18, this.ctx.currentTime);
-      this.compressor.knee.setValueAtTime(12, this.ctx.currentTime);
-      this.compressor.ratio.setValueAtTime(4, this.ctx.currentTime);
-      this.compressor.attack.setValueAtTime(0.005, this.ctx.currentTime);
-      this.compressor.release.setValueAtTime(0.12, this.ctx.currentTime);
+      this.compressor.threshold.setValueAtTime(-2.5, this.ctx.currentTime);
+      this.compressor.knee.setValueAtTime(6, this.ctx.currentTime);
+      this.compressor.ratio.setValueAtTime(12, this.ctx.currentTime);
+      this.compressor.attack.setValueAtTime(0.003, this.ctx.currentTime);
+      this.compressor.release.setValueAtTime(0.08, this.ctx.currentTime);
       this.compressor.connect(this.ctx.destination);
 
       // Master Gain Node with smooth transition
@@ -100,7 +108,8 @@ export class SoundSystem {
   }
 
   /**
-   * Generates organic acoustic waveforms modeled after biological cardiac valve closures.
+   * Generates organic acoustic waveforms modeled after biological cardiac valve closures
+   * and crystalline resonance for the floating gem.
    * Uses smooth windowing to guarantee 0 clicks, 0 pops, and 0 electronic harshness.
    */
   buildAcousticBuffers() {
@@ -108,46 +117,52 @@ export class SoundSystem {
 
     const sampleRate = this.ctx.sampleRate || 44100;
 
-    // 1. Primary Beat (Lub - S1): Muffled, deep, warm myocardial closure
-    // Settles naturally from ~48Hz to ~40Hz with soft tissue resonance
+    // 1. Primary Beat (Lub - S1): Warm, deep, full myocardial contraction.
+    // Settles naturally from 58Hz down to 44Hz with warm tissue harmonics (2nd & 3rd).
     this.lubBuffer = this.renderCardiacBuffer({
       sampleRate,
-      duration: 0.16,
-      startFreq: 48,
-      endFreq: 40,
-      attackTime: 0.022,
-      decayTau: 0.038,
-      bodyRatio: 0.18,
+      duration: 0.18,
+      startFreq: 58,
+      endFreq: 44,
+      attackTime: 0.020,
+      decayTau: 0.046,
+      bodyRatio: 0.35,
+      thirdHarmonicRatio: 0.15,
+      amplitude: 0.95,
+    });
+
+    // 2. Secondary Beat (Dub - S2): Crisp, shorter aortic/pulmonary valve closure.
+    // Settles naturally from 75Hz down to 60Hz.
+    this.dubBuffer = this.renderCardiacBuffer({
+      sampleRate,
+      duration: 0.14,
+      startFreq: 75,
+      endFreq: 60,
+      attackTime: 0.016,
+      decayTau: 0.034,
+      bodyRatio: 0.28,
+      thirdHarmonicRatio: 0.12,
       amplitude: 0.85,
     });
 
-    // 2. Secondary Beat (Dub - S2): Slightly shorter, slightly higher valve snap
-    // Settles naturally from ~62Hz to ~54Hz
-    this.dubBuffer = this.renderCardiacBuffer({
-      sampleRate,
-      duration: 0.12,
-      startFreq: 62,
-      endFreq: 54,
-      attackTime: 0.018,
-      decayTau: 0.028,
-      bodyRatio: 0.14,
-      amplitude: 0.58,
-    });
-
-    // 3. Final Strong Beat: Deep, full, resonant diastolic surge before explosion
+    // 3. Final Strong Beat: Deep, resonant diastolic surge right before explosion.
     this.finalBeatBuffer = this.renderCardiacBuffer({
       sampleRate,
-      duration: 0.22,
-      startFreq: 45,
-      endFreq: 36,
-      attackTime: 0.026,
-      decayTau: 0.052,
-      bodyRatio: 0.24,
-      amplitude: 1.05,
+      duration: 0.24,
+      startFreq: 54,
+      endFreq: 38,
+      attackTime: 0.024,
+      decayTau: 0.062,
+      bodyRatio: 0.42,
+      thirdHarmonicRatio: 0.20,
+      amplitude: 0.98,
     });
 
     // 4. Soft Explosion Release: Very brief, quiet sub-bass exhale + whisper of air (non-bomb)
     this.softBurstBuffer = this.renderSoftBurstBuffer(sampleRate, 0.55);
+
+    // 5. Gem Floating Crystal Shimmer: Ethereal, gentle, high-purity crystal tone
+    this.gemShimmerBuffer = this.renderGemShimmerBuffer(sampleRate, 4.0);
   }
 
   renderCardiacBuffer({
@@ -158,6 +173,7 @@ export class SoundSystem {
     attackTime,
     decayTau,
     bodyRatio,
+    thirdHarmonicRatio = 0.12,
     amplitude,
   }) {
     const totalSamples = Math.floor(sampleRate * duration);
@@ -165,6 +181,8 @@ export class SoundSystem {
     const data = buffer.getChannelData(0);
 
     let phaseAcc = 0;
+    const normFactor = 1.0 / (1.0 + bodyRatio + thirdHarmonicRatio);
+
     for (let i = 0; i < totalSamples; i += 1) {
       const t = i / sampleRate;
       const progress = t / duration;
@@ -173,10 +191,11 @@ export class SoundSystem {
       const freq = startFreq + (endFreq - startFreq) * Math.pow(progress, 0.7);
       phaseAcc += (2 * Math.PI * freq) / sampleRate;
 
-      // Fundamental wave + gentle second harmonic tissue body
+      // Fundamental wave + warm myocardial tissue harmonics (2nd & 3rd)
       const fundamental = Math.sin(phaseAcc);
-      const tissueHarmonic = Math.sin(phaseAcc * 2.0 + 0.25) * bodyRatio;
-      const rawWave = fundamental + tissueHarmonic;
+      const tissueHarmonic2 = Math.sin(phaseAcc * 2.0 + 0.25) * bodyRatio;
+      const tissueHarmonic3 = Math.sin(phaseAcc * 3.0 + 0.50) * thirdHarmonicRatio;
+      const rawWave = fundamental + tissueHarmonic2 + tissueHarmonic3;
 
       // Soft rounded attack (sinusoidal) and exponential biological decay
       let env = 0;
@@ -193,7 +212,7 @@ export class SoundSystem {
         env *= tailP;
       }
 
-      data[i] = rawWave * env * amplitude;
+      data[i] = rawWave * normFactor * env * amplitude;
     }
 
     return buffer;
@@ -226,7 +245,7 @@ export class SoundSystem {
         ? Math.sin((Math.PI * 0.5) * (t / 0.04))
         : Math.exp(-(t - 0.04) / 0.18);
 
-      let sample = subWave * subEnv * 0.55 + pinkLast * airEnv * 0.20;
+      let sample = subWave * subEnv * 0.65 + pinkLast * airEnv * 0.22;
 
       // Tail taper
       const tailSamples = Math.floor(sampleRate * 0.02);
@@ -236,6 +255,53 @@ export class SoundSystem {
       }
 
       data[i] = sample;
+    }
+
+    return buffer;
+  }
+
+  /**
+   * Generates a delicate, high-purity crystal shimmer for the floating gem.
+   * All frequencies and modulations have exact integer periods over the buffer duration,
+   * guaranteeing an infinite, seamless loop with zero clicks, pops, or phase artifacts.
+   */
+  renderGemShimmerBuffer(sampleRate, duration = 4.0) {
+    const totalSamples = Math.floor(sampleRate * duration);
+    const buffer = this.ctx.createBuffer(1, totalSamples, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    // Harmonious crystal singing frequencies (528Hz Solfeggio / pure crystal series)
+    // Over a 4.0-second buffer, every tone completes an exact integer number of cycles:
+    // e.g. 528.0 * 4 = 2112, 528.5 * 4 = 2114, 792.0 * 4 = 3168, etc.
+    const tones = [
+      { freq: 528.0, amp: 0.28 },
+      { freq: 528.5, amp: 0.22 },
+      { freq: 792.0, amp: 0.16 },
+      { freq: 1056.0, amp: 0.14 },
+      { freq: 1056.75, amp: 0.10 },
+      { freq: 1584.25, amp: 0.08 },
+      { freq: 2112.0, amp: 0.04 },
+    ];
+
+    const totalAmp = tones.reduce((sum, t) => sum + t.amp, 0);
+
+    for (let i = 0; i < totalSamples; i += 1) {
+      const t = i / sampleRate;
+      let sample = 0;
+
+      // Soft amplitude breathing (0.5 Hz = exactly 2 cycles over 4s)
+      const breathing = 0.85 + 0.15 * Math.sin(2 * Math.PI * 0.5 * t);
+      // Delicate shimmer tremolo on high harmonics (2.0 Hz = exactly 8 cycles over 4s)
+      const shimmer = 0.80 + 0.20 * Math.sin(2 * Math.PI * 2.0 * t);
+
+      for (let j = 0; j < tones.length; j += 1) {
+        const tone = tones[j];
+        const phase = 2 * Math.PI * tone.freq * t;
+        const mod = j >= 4 ? shimmer : breathing;
+        sample += Math.sin(phase) * tone.amp * mod;
+      }
+
+      data[i] = (sample / totalAmp) * 0.88;
     }
 
     return buffer;
@@ -314,30 +380,123 @@ export class SoundSystem {
   }
 
   // --------------------------------------------------------------------------
-  // Biological Heartbeat Pulses (No electronic sound)
+  // Biological Heartbeat Pulses (~5x louder, warm organic myocardial presence)
   // --------------------------------------------------------------------------
   playHeartbeat(intensity = 0.5, isRapid = false, isDub = false) {
     const buffer = isDub ? this.dubBuffer : this.lubBuffer;
     if (!buffer) return;
 
-    // Subtle natural volume scaling with heartbeat intensity
-    const baseVol = isDub ? 0.40 : 0.55;
-    const volume = Math.min(0.75, baseVol + intensity * 0.12);
+    // Rich presence scaling
+    const baseVol = isDub ? 0.70 : 0.95;
+    const volume = Math.min(1.10, baseVol + intensity * 0.15);
     this.playBuffer(buffer, volume);
   }
 
   playFinalBeat() {
     if (!this.finalBeatBuffer) return;
-    this.playBuffer(this.finalBeatBuffer, 0.85);
+    this.playBuffer(this.finalBeatBuffer, 1.05);
   }
 
   playSoftExplosion() {
     if (!this.softBurstBuffer) return;
-    this.playBuffer(this.softBurstBuffer, 0.45);
+    this.playBuffer(this.softBurstBuffer, 0.60);
   }
 
   // --------------------------------------------------------------------------
-  // Frame Update Loop - Sync directly with HeartSystem
+  // Gem Floating Crystal Sound (~5x perceived loudness, ethereal crystal loop)
+  // --------------------------------------------------------------------------
+  startGemSound() {
+    if (
+      !this.ctx ||
+      !this.gemShimmerBuffer ||
+      this.gemPlaying ||
+      this.gemSoundDisabled ||
+      this.muted
+    ) {
+      return;
+    }
+
+    try {
+      const now = this.ctx.currentTime;
+      const source = this.ctx.createBufferSource();
+      source.buffer = this.gemShimmerBuffer;
+      source.loop = true;
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, now);
+      // Beautiful smooth fade-in over 0.75s
+      gain.gain.linearRampToValueAtTime(0.52, now + 0.75);
+
+      source.connect(gain);
+      gain.connect(this.masterGain);
+
+      this.gemSourceNode = source;
+      this.gemGainNode = gain;
+      this.gemPlaying = true;
+
+      source.onended = () => {
+        if (this.gemSourceNode === source) {
+          this.gemSourceNode = null;
+          this.gemGainNode = null;
+          this.gemPlaying = false;
+        }
+      };
+
+      source.start(now);
+    } catch {
+      // Safe fallback
+    }
+  }
+
+  stopGemSound() {
+    if (!this.gemPlaying && !this.gemSourceNode) {
+      return;
+    }
+
+    const source = this.gemSourceNode;
+    const gain = this.gemGainNode;
+
+    this.gemPlaying = false;
+    this.gemSourceNode = null;
+    this.gemGainNode = null;
+    this.gemSoundDisabled = true;
+
+    if (gain && this.ctx) {
+      try {
+        const now = this.ctx.currentTime;
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(gain.gain.value ?? 0.52, now);
+        // Fast 0.08s smooth release to prevent any digital pop
+        gain.gain.linearRampToValueAtTime(0, now + 0.08);
+      } catch {
+        // Safe fallback
+      }
+    }
+
+    if (source && this.ctx) {
+      try {
+        const stopTime = this.ctx.currentTime + 0.08;
+        source.stop(stopTime);
+        setTimeout(() => {
+          try {
+            source.disconnect();
+            gain?.disconnect();
+          } catch {
+            // Safe ignore
+          }
+        }, 120);
+      } catch {
+        try {
+          source.stop();
+        } catch {
+          // Safe ignore
+        }
+      }
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Frame Update Loop - Sync directly with HeartSystem & Cinematic States
   // --------------------------------------------------------------------------
   update(dt = 0.016, stateSnapshot = {}, heartSystem = null) {
     if (!this.ctx || !this.unlocked) return;
@@ -357,13 +516,13 @@ export class SoundSystem {
         this.dubTriggered = false;
       }
 
-      // Lub triggers at the onset of primary contraction (~phase 0.06 - 0.14)
+      // Lub triggers at the onset of primary contraction (~phase 0.06 - 0.20)
       if (!this.lubTriggered && phase >= 0.06 && phase <= 0.20) {
         this.playHeartbeat(intensity, isRapid, false);
         this.lubTriggered = true;
       }
 
-      // Dub triggers at the onset of secondary closure (~phase 0.24 - 0.36)
+      // Dub triggers at the onset of secondary closure (~phase 0.24 - 0.42)
       if (!this.dubTriggered && phase >= 0.24 && phase <= 0.42) {
         this.playHeartbeat(intensity, isRapid, true);
         this.dubTriggered = true;
@@ -392,6 +551,28 @@ export class SoundSystem {
         this.playSoftExplosion();
         this.explosionTriggered = true;
       }
+    } else if (state === 'PETAL_FLIGHT' || state === 'GEM_IDLE') {
+      this.lastHeartbeatPhase = -1;
+      this.lubTriggered = false;
+      this.dubTriggered = false;
+
+      // Gem is floating in the center after explosion: start crystal shimmer sound
+      if (!this.gemPlaying && !this.gemSoundDisabled) {
+        this.startGemSound();
+      }
+    } else if (
+      state === 'GEM_BURST' ||
+      state === 'LOVE_REVEAL' ||
+      state === 'END'
+    ) {
+      this.lastHeartbeatPhase = -1;
+      this.lubTriggered = false;
+      this.dubTriggered = false;
+
+      // After clicking gem or subsequent states: stop gem sound completely
+      if (this.gemPlaying) {
+        this.stopGemSound();
+      }
     } else {
       this.lastHeartbeatPhase = -1;
       this.lubTriggered = false;
@@ -407,6 +588,10 @@ export class SoundSystem {
     this.dubTriggered = false;
     this.finalBeatTriggered = false;
     this.explosionTriggered = false;
+
+    // Reset gem sound state
+    this.stopGemSound();
+    this.gemSoundDisabled = false;
 
     // Stop active sources on reset
     this.activeSources.forEach((source) => {
@@ -431,3 +616,4 @@ export class SoundSystem {
     }
   }
 }
+

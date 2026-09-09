@@ -1,6 +1,9 @@
 # Audio Assets & Sound Design Structure
 
-Hệ thống âm thanh của dự án tập trung tối giản, thuần khiết và cinematic, với trọng tâm duy nhất là **nhịp đập trái tim tự nhiên (biological heartbeat)** và **khoảnh khắc nổ cánh hoa êm dịu**, loại bỏ hoàn toàn các tạp âm điện tử hoặc hiệu ứng thừa.
+Hệ thống âm thanh của dự án tập trung tối giản, thuần khiết và cinematic, với các âm thanh duy nhất được giữ lại:
+1. **Biological Heartbeat** (nhịp đập sinh học Lub - Dub tự nhiên, trầm ấm).
+2. **Final Heartbeat & Soft Explosion Transition** (cú đập quyết định và hơi thở bung cánh hoa êm ái).
+3. **Gem Floating Crystal Tone** (ngân rung tinh thể thuần khiết, êm ái khi gem lơ lửng sau khi tim nổ).
 
 Mặc định sử dụng bộ tổng hợp âm thanh thủ tục (Procedural Sound Synthesizer) thông qua **Web Audio API** tích hợp sẵn trong [`SoundSystem.js`](file:///d:/_CODE_BANK/Project_/03_Funny/galaxy-heart/src/audio/SoundSystem.js).
 
@@ -8,23 +11,28 @@ Mặc định sử dụng bộ tổng hợp âm thanh thủ tục (Procedural So
 
 ## Danh sách Cues âm thanh (Minimalist Manifest)
 
-Nếu bạn muốn sử dụng các file âm thanh thu âm thực tế (mp3/wav) thay cho bộ tổng hợp, bạn có thể đặt các file tương ứng vào thư mục này:
-
-| File Name | Mô tả | Thời điểm phát | Gợi ý âm sắc |
+| Cue / File | Mô tả | Thời điểm phát | Đặc tả âm học |
 | :--- | :--- | :--- | :--- |
-| `heartbeat-lub.wav` | Tiếng nhịp tim chính ($S_1$) | Nhịp co bóp tâm thu của tim | Trầm ấm, tự nhiên (45Hz - 48Hz), mềm mại, không click/pop |
-| `heartbeat-dub.wav` | Tiếng nhịp tim phụ ($S_2$) | Nhịp đóng van tâm trương | Ngắn hơn một chút, âm lượng ~60% của Lub |
-| `heartbeat-final.wav` | Cú đập tim quyết định | Giai đoạn `TENSION` trước khi nổ | Dày, vang, cảm xúc, kết nối trực tiếp vào cú bung cánh hoa |
-| `explosion-soft.wav` | Hơi thở nổ cánh hoa | Khi tim bung toả | Âm thanh thở nhẹ của cánh hoa (low breath / soft whoosh), tuyệt đối không dùng tiếng bom |
+| `heartbeat-lub` | Nhịp tim chính ($S_1$) | Nhịp co bóp tâm thu | Trầm ấm (58Hz $\rightarrow$ 44Hz), họa âm mô tim 2x/3x, ~5x perceived volume |
+| `heartbeat-dub` | Nhịp tim phụ ($S_2$) | Nhịp van tâm trương | Gọn gàng (75Hz $\rightarrow$ 60Hz), âm sắc thanh hơn Lub |
+| `heartbeat-final` | Nhịp tim quyết định | Giai đoạn `TENSION` | Dày, vang, kết nối trực tiếp vào cú bung cánh hoa |
+| `explosion-soft` | Hơi thở bung cánh hoa | Khi tim bung toả | Âm thở sub rất nhẹ (low breath / air), phi bom đạn |
+| `gem-floating` | Âm thanh Gem lơ lửng | `PETAL_FLIGHT` & `GEM_IDLE` | Hòa âm tinh thể 528Hz/1056Hz/1584Hz ngân nhẹ lặp vô tận, tự ngắt khi click gem |
 
 ---
 
-## Nguyên tắc thiết kế âm thanh
-1. **Trọng tâm duy nhất là Heartbeat**:
-   - Nhịp tim đập tự nhiên, trầm, mềm, biological.
-   - Nhịp tăng dần theo đúng dòng thời gian animation: chậm $\rightarrow$ nhanh dần $\rightarrow$ dồn dập $\rightarrow$ nhịp đập cuối cùng $\rightarrow$ bung cánh hoa.
-2. **Không tạp âm điện tử**:
-   - Loại bỏ hoàn toàn tiếng bíp, chimes, tiếng rù rè, synth pads, tiếng click nút bấm và hiệu ứng giả.
-   - Không chồng chéo nhiều lớp âm thanh gây ồn.
-3. **Mute/Unmute**:
-   - Nút loa nhỏ ở góc trên bên phải màn hình cho phép người dùng bật/tắt bất kỳ lúc nào và tự động nhớ lựa chọn vào `localStorage`.
+## Nguyên tắc thiết kế âm thanh bắt buộc
+1. **Âm lượng tối ưu (~5x louder, không clipping)**:
+   - Tối ưu gain staging và dải họa âm sinh học giúp người nghe cảm nhận rõ ràng gấp ~5 lần trên loa điện thoại, laptop lẫn tai nghe.
+   - Master Peak Limiter (-2.5dB threshold, 12:1 ratio) chống méo tiếng, vỡ tiếng hoặc volume spike.
+2. **Chỉ giữ lại các âm thanh quy định**:
+   - Heartbeat (Lub, Dub)
+   - Final beat & soft transition
+   - Gem floating shimmer khi lơ lửng
+   - Tuyệt đối không thêm ambience khác, sparkle khác, UI click, love text reveal, whoosh hay BGM.
+3. **Quy tắc khi click Gem**:
+   - Khi người dùng bấm vào Gem, âm thanh Gem lập tức dừng hẳn.
+   - Không phát thêm bất kỳ âm thanh nào sau đó.
+4. **Mute/Unmute**:
+   - Nút loa ở góc màn hình cho phép bật/tắt bất kỳ lúc nào và lưu cấu hình vào `localStorage`.
+

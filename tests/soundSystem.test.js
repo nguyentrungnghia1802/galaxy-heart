@@ -202,11 +202,132 @@ describe('SoundSystem', () => {
     sound.update(0.016, { state: 'EXPLOSION', progress: 0.5 });
     expect(spyExplosion).toHaveBeenCalledTimes(1);
 
-    // Quiet in post-explosion states
+    // Post-explosion states: spyFinalBeat and spyExplosion are NOT called
+    sound.update(0.016, { state: 'PETAL_FLIGHT', progress: 0.5 });
     sound.update(0.016, { state: 'GEM_IDLE', progress: 0.5 });
     sound.update(0.016, { state: 'LOVE_REVEAL', progress: 0.5 });
     sound.update(0.016, { state: 'END', progress: 1.0 });
+    expect(spyFinalBeat).toHaveBeenCalledTimes(1);
+    expect(spyExplosion).toHaveBeenCalledTimes(1);
+
+    sound.dispose();
+  });
+
+  it('generates gem shimmer buffer with seamless loop length and non-clipping peak', async () => {
+    // Test with actual Float32Array data generation
+    let createdBufferData = null;
+    class RealBufferMockAudioContext extends MockAudioContext {
+      createBuffer = vi.fn((channels, length, sampleRate) => {
+        const data = new Float32Array(length);
+        createdBufferData = data;
+        return {
+          length,
+          numberOfChannels: channels,
+          sampleRate,
+          getChannelData: vi.fn(() => data),
+        };
+      });
+    }
+
+    const sound = new SoundSystem({
+      AudioContext: RealBufferMockAudioContext,
+      autoInit: true,
+    });
+    await sound.unlock();
+
+    expect(sound.gemShimmerBuffer).toBeDefined();
+
+    // Check raw samples for non-clipping
+    if (createdBufferData) {
+      let maxVal = 0;
+      for (let i = 0; i < createdBufferData.length; i += 1) {
+        maxVal = Math.max(maxVal, Math.abs(createdBufferData[i]));
+      }
+      expect(maxVal).toBeLessThanOrEqual(0.99);
+      expect(maxVal).toBeGreaterThan(0.3); // High presence, not too quiet
+    }
+
+    sound.dispose();
+  });
+
+  it('manages gem floating sound lifecycle: starts on PETAL_FLIGHT/GEM_IDLE, loops, and stops on click', async () => {
+    const sound = new SoundSystem({
+      AudioContext: MockAudioContext,
+      autoInit: true,
+    });
+    await sound.unlock();
+
+    const spyStartGem = vi.spyOn(sound, 'startGemSound');
+    const spyStopGem = vi.spyOn(sound, 'stopGemSound');
+
+    // In PETAL_FLIGHT: starts gem sound
+    sound.update(0.016, { state: 'PETAL_FLIGHT', progress: 0.1 });
+    expect(spyStartGem).toHaveBeenCalledTimes(1);
+    expect(sound.gemPlaying).toBe(true);
+    expect(sound.gemSourceNode).toBeDefined();
+    expect(sound.gemSourceNode.loop).toBe(true);
+
+    // Subsequent updates in PETAL_FLIGHT / GEM_IDLE do NOT duplicate instances
+    sound.update(0.016, { state: 'PETAL_FLIGHT', progress: 0.5 });
+    sound.update(0.016, { state: 'GEM_IDLE', progress: 0.2 });
+    expect(spyStartGem).toHaveBeenCalledTimes(1); // Still 1, no duplicate!
+
+    // User clicks gem -> stopGemSound is called
+    sound.stopGemSound();
+    expect(spyStopGem).toHaveBeenCalledTimes(1);
+    expect(sound.gemPlaying).toBe(false);
+    expect(sound.gemSoundDisabled).toBe(true);
+
+    // Further updates in GEM_IDLE must NOT restart the gem sound once stopped!
+    sound.update(0.016, { state: 'GEM_IDLE', progress: 0.8 });
+    expect(spyStartGem).toHaveBeenCalledTimes(1); // Still 1!
+    expect(sound.gemPlaying).toBe(false);
+
+    // Resetting enables it for the next run
+    sound.reset();
+    expect(sound.gemSoundDisabled).toBe(false);
+    expect(sound.gemPlaying).toBe(false);
+
+    sound.dispose();
+  });
+
+  it('automatically stops gem sound when transitioning to GEM_BURST, LOVE_REVEAL, or END', async () => {
+    const sound = new SoundSystem({
+      AudioContext: MockAudioContext,
+      autoInit: true,
+    });
+    await sound.unlock();
+
+    sound.update(0.016, { state: 'GEM_IDLE', progress: 0.5 });
+    expect(sound.gemPlaying).toBe(true);
+
+    // Transition to GEM_BURST stops it automatically
+    sound.update(0.016, { state: 'GEM_BURST', progress: 0.1 });
+    expect(sound.gemPlaying).toBe(false);
+    expect(sound.gemSoundDisabled).toBe(true);
+
+    // Transition to LOVE_REVEAL or END keeps it off
+    sound.update(0.016, { state: 'LOVE_REVEAL', progress: 0.5 });
+    expect(sound.gemPlaying).toBe(false);
+    sound.update(0.016, { state: 'END', progress: 1.0 });
+    expect(sound.gemPlaying).toBe(false);
+
+    sound.dispose();
+  });
+
+  it('configures master volume to 1.0 and limiter with protective headroom', async () => {
+    const sound = new SoundSystem({
+      AudioContext: MockAudioContext,
+      autoInit: true,
+    });
+    await sound.unlock();
+
+    expect(sound.masterVolume).toBe(1.0);
+    expect(sound.compressor).toBeDefined();
+    expect(sound.compressor.threshold.setValueAtTime).toHaveBeenCalledWith(-2.5, 0.5);
+    expect(sound.compressor.ratio.setValueAtTime).toHaveBeenCalledWith(12, 0.5);
 
     sound.dispose();
   });
 });
+

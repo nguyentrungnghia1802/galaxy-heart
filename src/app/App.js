@@ -214,6 +214,7 @@ export class App {
       currentState === 'GEM_IDLE' ||
       currentState === 'PETAL_FLIGHT'
     ) {
+      this.soundSystem?.stopGemSound();
       this.gemSystem.triggerBurst();
       this.stateMachine.transitionTo('GEM_BURST');
     }

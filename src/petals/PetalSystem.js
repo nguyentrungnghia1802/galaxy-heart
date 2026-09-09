@@ -1,7 +1,12 @@
 import * as THREE from 'three';
 
+import { createSeededRandom } from '../utils/random.js';
 import { PetalBuffers } from './PetalBuffers.js';
 import { createPetalGeometry } from './PetalGeometry.js';
+import {
+  initializeExplosion,
+  integratePetalFlight,
+} from './explosionPhysics.js';
 
 const LOCAL_PETAL_NORMAL = new THREE.Vector3(0, 0, 1);
 const PETAL_UNIT_SCALE = 0.2;
@@ -13,11 +18,27 @@ const DEFAULT_PALETTE = Object.freeze([
   0xd91668,
   0xff6688,
 ]);
+const ATTACHED_STATES = new Set([
+  'BOOT',
+  'PRELOAD',
+  'INTRO',
+  'HEART_IDLE',
+  'HEARTBEAT',
+  'RAPID_HEARTBEAT',
+  'TENSION',
+]);
 
 export class PetalSystem {
-  constructor({ count, geometry, material, palette = DEFAULT_PALETTE }) {
+  constructor({
+    count,
+    geometry,
+    material,
+    palette = DEFAULT_PALETTE,
+    seed = 0x50455441,
+  }) {
     this.count = count;
     this.palette = palette;
+    this.seed = seed;
     this.buffers = new PetalBuffers(count);
     this.geometry = geometry ?? createPetalGeometry();
     this.material =
@@ -45,6 +66,14 @@ export class PetalSystem {
     this.tempScale = new THREE.Vector3();
     this.tempMatrix = new THREE.Matrix4();
     this.tempColor = new THREE.Color();
+    this.attached = false;
+    this.disposed = false;
+    this.mode = 'attached';
+    this.previousState = null;
+    this.explosionCount = 0;
+    this.flightTime = 0;
+    this.currentGlobalScale = 1;
+    this.flightScale = 1;
   }
 
   attachToHeart(anchorData) {
@@ -89,6 +118,13 @@ export class PetalSystem {
     }
 
     this.buffers.resetDynamics();
+    this.attached = true;
+    this.mode = 'attached';
+    this.previousState = null;
+    this.explosionCount = 0;
+    this.flightTime = 0;
+    this.currentGlobalScale = 1;
+    this.flightScale = 1;
     if (this.mesh.instanceColor) {
       this.mesh.instanceColor.needsUpdate = true;
     }
@@ -96,6 +132,7 @@ export class PetalSystem {
   }
 
   updateAttachedTransforms(globalScale) {
+    this.currentGlobalScale = globalScale;
     for (let index = 0; index < this.count; index += 1) {
       const vectorOffset = index * 3;
       const rotationOffset = index * 4;
@@ -123,8 +160,88 @@ export class PetalSystem {
     this.mesh.instanceMatrix.needsUpdate = true;
   }
 
+  triggerExplosion(explosionParams = {}) {
+    if (!this.attached) {
+      throw new Error('PetalSystem must attach anchors before exploding.');
+    }
+    if (this.explosionCount > 0) {
+      return false;
+    }
+
+    this.flightScale = this.currentGlobalScale;
+    const random = createSeededRandom(explosionParams.seed ?? this.seed);
+    initializeExplosion(this.buffers, random, explosionParams);
+    this.mode = 'flight';
+    this.explosionCount += 1;
+    return true;
+  }
+
+  update(dt, stateSnapshot) {
+    const state = stateSnapshot?.state ?? 'BOOT';
+
+    if (ATTACHED_STATES.has(state)) {
+      this.updateAttachedTransforms(stateSnapshot?.heartScale ?? 1);
+    } else if (state === 'EXPLOSION' || state === 'PETAL_FLIGHT') {
+      if (this.explosionCount === 0) {
+        this.triggerExplosion(stateSnapshot?.explosionParams);
+      }
+      const integratedDt = integratePetalFlight(
+        this.buffers,
+        dt,
+        this.flightTime,
+        stateSnapshot?.flightParams,
+      );
+      this.flightTime += integratedDt;
+      this.updateFlightTransforms();
+    }
+
+    this.previousState = state;
+  }
+
+  updateFlightTransforms() {
+    for (let index = 0; index < this.count; index += 1) {
+      const vectorOffset = index * 3;
+      const rotationOffset = index * 4;
+      this.tempPosition.fromArray(this.buffers.position, vectorOffset);
+      this.tempQuaternion.fromArray(this.buffers.rotation, rotationOffset);
+      const scale =
+        this.buffers.active[index] === 1
+          ? this.buffers.baseScale[index] * PETAL_UNIT_SCALE * this.flightScale
+          : 0;
+      this.tempScale.setScalar(scale);
+      this.tempMatrix.compose(
+        this.tempPosition,
+        this.tempQuaternion,
+        this.tempScale,
+      );
+      this.mesh.setMatrixAt(index, this.tempMatrix);
+    }
+
+    this.mesh.instanceMatrix.needsUpdate = true;
+  }
+
+  reset() {
+    if (!this.attached) {
+      return;
+    }
+
+    this.buffers.resetDynamics();
+    this.mode = 'attached';
+    this.previousState = null;
+    this.explosionCount = 0;
+    this.flightTime = 0;
+    this.currentGlobalScale = 1;
+    this.flightScale = 1;
+    this.updateAttachedTransforms(1);
+  }
+
   dispose() {
+    if (this.disposed) {
+      return;
+    }
+    this.mesh.removeFromParent();
     this.geometry.dispose();
     this.material.dispose();
+    this.disposed = true;
   }
 }

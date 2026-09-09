@@ -99,4 +99,109 @@ describe('PetalSystem', () => {
     expect(() => system.attachToHeart(anchors)).toThrow(/5 anchors/);
     system.dispose();
   });
+
+  it('keeps attached petals bound to scaled heart anchors', () => {
+    const anchors = createHeartAnchors({ count: 12, seed: 2 });
+    const system = new PetalSystem({ count: anchors.length });
+    const matrix = new THREE.Matrix4();
+    const position = new THREE.Vector3();
+    system.attachToHeart(anchors);
+
+    system.update(0.016, { state: 'HEARTBEAT', heartScale: 1.1 });
+    system.mesh.getMatrixAt(0, matrix);
+    position.setFromMatrixPosition(matrix);
+
+    expect(position.x).toBeCloseTo(anchors[0].position.x * 1.1, 5);
+    expect(position.y).toBeCloseTo(anchors[0].position.y * 1.1, 5);
+    expect(position.z).toBeCloseTo(anchors[0].position.z * 1.1, 5);
+    system.dispose();
+  });
+
+  it('triggers one explosion impulse when EXPLOSION spans multiple updates', () => {
+    const anchors = createHeartAnchors({ count: 32, seed: 4 });
+    const system = new PetalSystem({ count: anchors.length, seed: 99 });
+    const mesh = system.mesh;
+    system.attachToHeart(anchors);
+
+    system.update(0.016, { state: 'EXPLOSION' });
+    system.update(0.016, { state: 'EXPLOSION' });
+
+    expect(system.explosionCount).toBe(1);
+    expect(system.mesh).toBe(mesh);
+    expect(system.mode).toBe('flight');
+    system.dispose();
+  });
+
+  it('moves the same instances from heart anchors into petal flight', () => {
+    const anchors = createHeartAnchors({ count: 24, seed: 8 });
+    const system = new PetalSystem({ count: anchors.length, seed: 101 });
+    const mesh = system.mesh;
+    system.attachToHeart(anchors);
+    const attachedPosition = system.buffers.position.slice(0, 3);
+
+    system.update(0, { state: 'EXPLOSION' });
+    system.update(0.05, { state: 'PETAL_FLIGHT' });
+
+    expect(system.mesh).toBe(mesh);
+    expect([...system.buffers.position.slice(0, 3)]).not.toEqual([
+      ...attachedPosition,
+    ]);
+    expect(system.flightTime).toBeCloseTo(0.05, 6);
+    system.dispose();
+  });
+
+  it('replays ten times without replacing GPU resources or typed arrays', () => {
+    const anchors = createHeartAnchors({ count: 16, seed: 9 });
+    const system = new PetalSystem({ count: anchors.length });
+    const mesh = system.mesh;
+    const geometry = system.geometry;
+    const material = system.material;
+    const positionBuffer = system.buffers.position;
+    const scene = new THREE.Scene();
+    scene.add(system.mesh);
+    system.attachToHeart(anchors);
+
+    for (let replay = 0; replay < 10; replay += 1) {
+      system.update(0.016, { state: 'EXPLOSION' });
+      expect(system.explosionCount).toBe(1);
+      system.reset();
+      expect(system.explosionCount).toBe(0);
+      expect(system.mode).toBe('attached');
+    }
+
+    expect(system.mesh).toBe(mesh);
+    expect(system.geometry).toBe(geometry);
+    expect(system.material).toBe(material);
+    expect(system.buffers.position).toBe(positionBuffer);
+    expect(system.mesh.count).toBe(16);
+    expect(scene.children).toEqual([mesh]);
+    system.dispose();
+  });
+
+  it('marks out-of-bounds instances inactive without spawning replacements', () => {
+    const anchors = createHeartAnchors({ count: 4, seed: 10 });
+    const system = new PetalSystem({ count: anchors.length });
+    const mesh = system.mesh;
+    system.attachToHeart(anchors);
+    system.update(0, { state: 'EXPLOSION' });
+
+    system.update(0.05, {
+      state: 'PETAL_FLIGHT',
+      flightParams: { maxDistance: 0.01, windStrength: 0 },
+    });
+
+    expect(system.buffers.active.every((value) => value === 0)).toBe(true);
+    expect(system.mesh).toBe(mesh);
+    system.dispose();
+  });
+
+  it('removes its mesh from the scene only during teardown', () => {
+    const system = new PetalSystem({ count: 1 });
+    const scene = new THREE.Scene();
+    scene.add(system.mesh);
+
+    system.dispose();
+
+    expect(system.mesh.parent).toBeNull();
+  });
 });

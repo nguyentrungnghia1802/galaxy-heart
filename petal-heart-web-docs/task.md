@@ -454,15 +454,15 @@ petalSystem.dispose()
 
 ### Checklist
 
-- [ ] INTRO/HEART_IDLE/HEARTBEAT/RAPID_HEARTBEAT/TENSION: petals vẫn bound vào anchors + heart global scale.
-- [ ] `EXPLOSION` chỉ trigger impulse đúng một lần khi enter state.
-- [ ] Không reinitialize geometry/material/InstancedMesh lúc explosion.
-- [ ] `PETAL_FLIGHT` tích hợp physics mỗi frame.
-- [ ] Culling/scene bound đơn giản: instance đi quá xa có thể giữ ngoài view hoặc mark inactive; không spawn object mới.
-- [ ] `reset()` copy lại initial transform/state mà không recreate GPU resources.
-- [ ] Replay 10 lần không tăng số instance và không duplicate scene object.
-- [ ] `dispose()` chỉ dùng khi app thực sự teardown, không dùng cho Replay.
-- [ ] Nếu phù hợp, thêm integration test thuần cho state-enter explosion one-shot.
+- [x] INTRO/HEART_IDLE/HEARTBEAT/RAPID_HEARTBEAT/TENSION: petals vẫn bound vào anchors + heart global scale.
+- [x] `EXPLOSION` chỉ trigger impulse đúng một lần khi enter state.
+- [x] Không reinitialize geometry/material/InstancedMesh lúc explosion.
+- [x] `PETAL_FLIGHT` tích hợp physics mỗi frame.
+- [x] Culling/scene bound đơn giản: instance đi quá xa có thể giữ ngoài view hoặc mark inactive; không spawn object mới.
+- [x] `reset()` copy lại initial transform/state mà không recreate GPU resources.
+- [x] Replay 10 lần không tăng số instance và không duplicate scene object.
+- [x] `dispose()` chỉ dùng khi app thực sự teardown, không dùng cho Replay.
+- [x] Nếu phù hợp, thêm integration test thuần cho state-enter explosion one-shot.
 
 ### Done when
 

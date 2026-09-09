@@ -15,9 +15,19 @@ npm run preview
 
 `npm run build` tạo `dist/`.
 
-## 2. GitHub Pages
+## 2. GitHub Pages & GitHub Actions
 
-Nếu deploy dưới subpath repository, cấu hình Vite `base` phù hợp. Asset URL phải tương đối/base-aware, không hard-code `/assets/...` nếu site nằm dưới `/repo-name/`.
+Project được triển khai tự động lên GitHub Pages bằng GitHub Actions:
+
+- **Workflow file**: [`.github/workflows/deploy-pages.yml`](file:///.github/workflows/deploy-pages.yml)
+- **Trigger**: Tự động build và deploy khi push code vào branch `main`.
+- **Manual Trigger**: Hỗ trợ chạy thủ công từ tab **Actions** → chọn **Deploy to GitHub Pages** → click **Run workflow** (`workflow_dispatch`).
+- **Expected URL**: `https://nguyentrungnghia1802.github.io/galaxy-heart/`
+- **Vite Base Path**: Cấu hình tự động `/galaxy-heart/` khi chạy trong GitHub Actions (`GITHUB_PAGES=true` hoặc `GITHUB_ACTIONS=true`) và `./` khi dev/preview cục bộ.
+- **Repository Setting**: Cần bật GitHub Pages source:
+  1. Vào repository trên GitHub: **Settings** → **Pages**
+  2. Tại mục **Build and deployment** > **Source**, chọn **GitHub Actions**.
+- **Kiểm tra status**: Vào tab **Actions** trên repository để theo dõi tiến trình build và deploy. Pipeline có test gate (`npm test` và `npm run build`), nếu test fail hệ thống sẽ chặn không deploy artifact lỗi.
 
 ## 3. Netlify/Vercel
 

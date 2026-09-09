@@ -12,12 +12,12 @@
 
 ## 0. Cách dùng file này
 
-- [ ] Agent đọc `agent.md` trước khi làm bất kỳ task nào.
-- [ ] Đọc các tài liệu nền tảng theo thứ tự: `README.md` → `02-functional-requirements.md` → `04-animation-state-machine.md` → `05-3d-heart-and-petal-system.md` → `06-technical-architecture.md` → `07-performance-mobile.md` → `12-acceptance-criteria.md` → `13-file-structure-contracts.md`.
-- [ ] Chỉ làm task mà prompt hiện tại yêu cầu; không tự ý nhảy qua hàng loạt task.
-- [ ] Mỗi task hoàn tất phải tick `[x]` trong file này, chạy kiểm tra tương ứng và commit riêng.
-- [ ] Cuối prompt hiện tại, sau khi tất cả task được yêu cầu đã commit, chạy `git push origin main`.
-- [ ] Không bắt đầu Phase B trước khi toàn bộ mục `CORE GATE` đạt.
+- [x] Agent đọc `agent.md` trước khi làm bất kỳ task nào.
+- [x] Đọc các tài liệu nền tảng theo thứ tự: `README.md` → `02-functional-requirements.md` → `04-animation-state-machine.md` → `05-3d-heart-and-petal-system.md` → `06-technical-architecture.md` → `07-performance-mobile.md` → `12-acceptance-criteria.md` → `13-file-structure-contracts.md`.
+- [x] Chỉ làm task mà prompt hiện tại yêu cầu; không tự ý nhảy qua hàng loạt task.
+- [x] Mỗi task hoàn tất phải tick `[x]` trong file này, chạy kiểm tra tương ứng và commit riêng.
+- [x] Cuối prompt hiện tại, sau khi tất cả task được yêu cầu đã commit, chạy `git push origin main`.
+- [x] Không bắt đầu Phase B trước khi toàn bộ mục `CORE GATE` đạt.
 
 ### Status convention
 
@@ -597,21 +597,27 @@ git commit -m "feat(core): integrate end-to-end petal heart timeline"
 
 **Owner kiểm tra:** GPT-5.6 Sol High
 
-- [ ] `npm test` PASS toàn bộ.
-- [ ] `npm run build` PASS.
-- [ ] Heart có chiều sâu 3D thật, không phải sprite/ảnh fake.
-- [ ] State flow chạy đúng: `INTRO → HEART_IDLE → HEARTBEAT → RAPID_HEARTBEAT → TENSION → EXPLOSION → PETAL_FLIGHT → END`.
-- [ ] Double-pulse heartbeat đọc được bằng mắt.
-- [ ] Rapid heartbeat tăng tốc rõ.
-- [ ] Explosion chỉ trigger một lần.
-- [ ] Same petal instances tiếp tục từ heart sang flight.
-- [ ] Flight có radial + tangent + drag + gravity + drift + rotation.
-- [ ] Có foreground-biased subset.
-- [ ] Tab hide/resume không skip explosion.
-- [ ] Replay 10 lần không duplicate instance/object.
-- [ ] Quality profile chọn trước INTRO.
-- [ ] Không có hàng nghìn `THREE.Mesh` riêng lẻ.
-- [ ] Không có blocker kiến trúc còn phải đập đi làm lại ở Phase B.
+- [x] `npm test` PASS toàn bộ.
+- [x] `npm run build` PASS.
+- [x] Heart có chiều sâu 3D thật, không phải sprite/ảnh fake.
+- [x] State flow chạy đúng: `INTRO → HEART_IDLE → HEARTBEAT → RAPID_HEARTBEAT → TENSION → EXPLOSION → PETAL_FLIGHT → END`.
+- [x] Double-pulse heartbeat đọc được bằng mắt.
+- [x] Rapid heartbeat tăng tốc rõ.
+- [x] Explosion chỉ trigger một lần.
+- [x] Same petal instances tiếp tục từ heart sang flight.
+- [x] Flight có radial + tangent + drag + gravity + drift + rotation.
+- [x] Có foreground-biased subset.
+- [x] Tab hide/resume không skip explosion.
+- [x] Replay 10 lần không duplicate instance/object.
+- [x] Quality profile chọn trước INTRO.
+- [x] Không có hàng nghìn `THREE.Mesh` riêng lẻ.
+- [x] Không có blocker kiến trúc còn phải đập đi làm lại ở Phase B.
+
+## CORE GATE verification notes
+
+- 61 automated tests cover deterministic random/math, state flow, heartbeat, heart sampling, typed buffers, impulse/flight physics, quality selection, visibility safety, lifecycle and App integration.
+- Browser QA covered medium/high profiles, 10 Replay runs, the real-timing heartbeat and explosion windows, 390×844 plus 844×390 resize, and production preview without console errors.
+- The in-app browser does not surface background tabs as `document.hidden`; hide/resume is therefore verified by the App + VisibilityClock integration test that cancels RAF, advances the clock by 30 seconds, resumes with `dt = 0`, and remains in INTRO/HEARTBEAT rather than skipping to EXPLOSION.
 
 **Chỉ khi tất cả mục trên `[x]` mới chuyển Phase B.**
 

@@ -22,7 +22,13 @@ body,
 }
 
 body {
-  background: radial-gradient(circle at 50% 48%, #24030d 0%, #080104 58%, #030102 100%);
+  background: radial-gradient(
+    ellipse at 50% 46%,
+    #1d020a 0%,
+    #0c0105 38%,
+    #050002 70%,
+    #020001 100%
+  );
 }
 
 canvas {

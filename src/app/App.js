@@ -1,3 +1,4 @@
+import { CameraSystem } from '../scene/CameraSystem.js';
 import { createHeartAnchors } from '../heart/HeartSurface.js';
 import { HeartSystem } from '../heart/HeartSystem.js';
 import { PetalSystem } from '../petals/PetalSystem.js';
@@ -41,6 +42,11 @@ export class App {
     this.camera = sceneBundle.camera;
     this.keyLight = sceneBundle.keyLight;
     this.cameraBaseZ = this.camera.position.z;
+    this.lightingSystem =
+      options.lightingSystem ?? sceneBundle.lightingSystem ?? null;
+    this.cameraSystem =
+      options.cameraSystem ??
+      new CameraSystem(this.camera, { windowTarget: this.windowTarget });
 
     this.rendererSystem =
       options.rendererSystem ??
@@ -77,6 +83,7 @@ export class App {
     this.handleStateEnter = this.handleStateEnter.bind(this);
     this.handleStateExit = this.handleStateExit.bind(this);
     this.handleResize = this.handleResize.bind(this);
+    this.handlePointerMove = this.handlePointerMove.bind(this);
     this.handleReplay = this.handleReplay.bind(this);
     this.renderFrame = this.renderFrame.bind(this);
     this.handlePause = this.handlePause.bind(this);
@@ -103,14 +110,26 @@ export class App {
     this.debugFrameCount = 0;
   }
 
+  handlePointerMove(event) {
+    if (!event || typeof event.clientX !== 'number') return;
+    const width = this.windowTarget?.innerWidth || 1;
+    const height = this.windowTarget?.innerHeight || 1;
+    const nx = (event.clientX / width) * 2 - 1;
+    const ny = (event.clientY / height) * 2 - 1;
+    this.cameraSystem?.onPointer(nx, ny);
+  }
+
   start() {
     if (this.running || this.disposed) {
       return;
     }
 
     if (!this.lifecycleStarted) {
-      this.windowTarget.addEventListener('resize', this.handleResize);
-      this.replayButton?.addEventListener('click', this.handleReplay);
+      this.windowTarget.addEventListener?.('resize', this.handleResize);
+      this.windowTarget.addEventListener?.('pointermove', this.handlePointerMove, {
+        passive: true,
+      });
+      this.replayButton?.addEventListener?.('click', this.handleReplay);
       this.visibilityClock.start();
       this.lifecycleStarted = true;
     }
@@ -144,7 +163,7 @@ export class App {
     this.stateSnapshot.heartScale = this.heartSystem.getGlobalScale();
     this.stateSnapshot.heartbeatIntensity = this.heartSystem.getIntensity();
     this.petalSystem.update(dt, this.stateSnapshot);
-    this.updatePlaceholderSystems();
+    this.updatePlaceholderSystems(dt);
     this.rendererSystem.render(this.scene, this.camera);
     this.updateDebugMetrics(now);
 
@@ -155,18 +174,27 @@ export class App {
     this.scheduleFrame();
   }
 
-  updatePlaceholderSystems() {
+  updatePlaceholderSystems(dt = 0.016) {
     const { state, progress, heartbeatIntensity } = this.stateSnapshot;
     this.petalSystem.material.emissiveIntensity =
       0.08 + Math.min(2, heartbeatIntensity) * 0.24;
-    this.keyLight.intensity = 3.2 + Math.min(2, heartbeatIntensity) * 0.9;
 
-    if (state === 'TENSION') {
-      this.camera.position.z = this.cameraBaseZ - progress * 0.14;
-    } else if (state === 'EXPLOSION') {
-      this.camera.position.z = this.cameraBaseZ - (1 - progress) * 0.14;
+    if (this.lightingSystem) {
+      this.lightingSystem.update(dt, this.stateSnapshot);
+    } else if (this.keyLight) {
+      this.keyLight.intensity = 3.2 + Math.min(2, heartbeatIntensity) * 0.9;
+    }
+
+    if (this.cameraSystem) {
+      this.cameraSystem.update(dt, this.stateSnapshot);
     } else {
-      this.camera.position.z = this.cameraBaseZ;
+      if (state === 'TENSION') {
+        this.camera.position.z = this.cameraBaseZ - progress * 0.14;
+      } else if (state === 'EXPLOSION') {
+        this.camera.position.z = this.cameraBaseZ - (1 - progress) * 0.14;
+      } else {
+        this.camera.position.z = this.cameraBaseZ;
+      }
     }
   }
 
@@ -238,6 +266,7 @@ export class App {
     const width = this.container.clientWidth || this.windowTarget.innerWidth || 1;
     const height =
       this.container.clientHeight || this.windowTarget.innerHeight || 1;
+    this.cameraSystem?.resize(width, height);
     this.rendererSystem.resize(width, height, this.camera);
   }
 
@@ -255,6 +284,8 @@ export class App {
     }
     this.heartSystem.reset();
     this.petalSystem.reset();
+    this.lightingSystem?.reset();
+    this.cameraSystem?.reset();
     this.stateMachine.reset();
     this.visibilityClock.reset();
     this.camera.position.z = this.cameraBaseZ;
@@ -278,8 +309,9 @@ export class App {
     }
     if (this.lifecycleStarted) {
       this.visibilityClock.stop();
-      this.windowTarget.removeEventListener('resize', this.handleResize);
-      this.replayButton?.removeEventListener('click', this.handleReplay);
+      this.windowTarget.removeEventListener?.('resize', this.handleResize);
+      this.windowTarget.removeEventListener?.('pointermove', this.handlePointerMove);
+      this.replayButton?.removeEventListener?.('click', this.handleReplay);
     }
     this.petalSystem.dispose();
     this.rendererSystem.dispose();

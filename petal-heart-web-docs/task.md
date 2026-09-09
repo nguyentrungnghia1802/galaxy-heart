@@ -690,14 +690,14 @@ src/styles.css
 
 ### Checklist
 
-- [ ] Camera perspective FOV khoảng 40–55°, heart nằm giữa safe frame.
-- [ ] Không bật orbit controls trong V1.
-- [ ] Background gần đen, có radial red ambience rất nhẹ.
-- [ ] Ambient light yếu.
-- [ ] Inner/key red light tạo cảm giác phát sáng từ heart.
-- [ ] Rim/back light giúp tách silhouette khỏi nền.
-- [ ] Exposure không cháy texture petals.
-- [ ] Composition desktop 16:9 đẹp trước, sau đó kiểm tra portrait mobile.
+- [x] Camera perspective FOV khoảng 40–55°, heart nằm giữa safe frame.
+- [x] Không bật orbit controls trong V1.
+- [x] Background gần đen, có radial red ambience rất nhẹ.
+- [x] Ambient light yếu.
+- [x] Inner/key red light tạo cảm giác phát sáng từ heart.
+- [x] Rim/back light giúp tách silhouette khỏi nền.
+- [x] Exposure không cháy texture petals.
+- [x] Composition desktop 16:9 đẹp trước, sau đó kiểm tra portrait mobile.
 
 ### Done when
 

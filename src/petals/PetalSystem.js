@@ -11,12 +11,14 @@ import {
 const LOCAL_PETAL_NORMAL = new THREE.Vector3(0, 0, 1);
 const PETAL_UNIT_SCALE = 0.2;
 const DEFAULT_PALETTE = Object.freeze([
-  0x9e0b32,
-  0xc41245,
-  0xe31b50,
-  0xff315f,
-  0xd91668,
-  0xff6688,
+  0x5a0314, // deep velvet wine crevice
+  0x78041c, // rich dark burgundy
+  0x9e0828, // deep crimson rose
+  0xba0c34, // classic ruby red
+  0xd81442, // vivid scarlet rose
+  0xeb1d4e, // bright rose petal
+  0xf53366, // radiant coral highlight
+  0xff5983, // luminous blush edge
 ]);
 const ATTACHED_STATES = new Set([
   'BOOT',
@@ -33,6 +35,7 @@ export class PetalSystem {
     count,
     geometry,
     material,
+    texture = null,
     palette = DEFAULT_PALETTE,
     seed = 0x50455441,
   }) {
@@ -45,11 +48,14 @@ export class PetalSystem {
       material ??
       new THREE.MeshStandardMaterial({
         color: 0xffffff,
-        roughness: 0.58,
+        roughness: 0.52,
         metalness: 0.04,
         side: THREE.DoubleSide,
         vertexColors: true,
       });
+    if (texture) {
+      this.setTexture(texture);
+    }
     this.mesh = new THREE.InstancedMesh(
       this.geometry,
       this.material,
@@ -218,6 +224,18 @@ export class PetalSystem {
     }
 
     this.mesh.instanceMatrix.needsUpdate = true;
+  }
+
+  setTexture(texture) {
+    if (!this.material || !texture) {
+      return;
+    }
+    this.material.map = texture;
+    this.material.roughnessMap = texture;
+    this.material.alphaTest = 0.08;
+    this.material.transparent = true;
+    this.material.depthWrite = true;
+    this.material.needsUpdate = true;
   }
 
   reset() {

@@ -648,14 +648,14 @@ public/assets/textures/petal.webp  # nếu dùng texture
 
 ### Checklist
 
-- [ ] Tạo curved low-poly petal geometry; không dùng full rose model cho mỗi instance.
-- [ ] Kiểm soát alpha/overdraw; texture nếu có phải crop chặt.
-- [ ] Palette 4–8 biến thể đỏ/hồng, tránh random rainbow.
-- [ ] Variation scale/orientation vẫn lấy từ core anchor data.
-- [ ] Có mặt sáng/tối đủ để nhận ra orientation trong 3D.
-- [ ] Nếu thêm flutter shader, giữ đơn giản và sử dụng per-instance seed hiện có.
-- [ ] Không phá `InstancedMesh` architecture.
-- [ ] Kiểm tra silhouette heart vẫn đọc rõ.
+- [x] Tạo curved low-poly petal geometry; không dùng full rose model cho mỗi instance.
+- [x] Kiểm soát alpha/overdraw; texture nếu có phải crop chặt.
+- [x] Palette 4–8 biến thể đỏ/hồng, tránh random rainbow.
+- [x] Variation scale/orientation vẫn lấy từ core anchor data.
+- [x] Có mặt sáng/tối đủ để nhận ra orientation trong 3D.
+- [x] Nếu thêm flutter shader, giữ đơn giản và sử dụng per-instance seed hiện có.
+- [x] Không phá `InstancedMesh` architecture.
+- [x] Kiểm tra silhouette heart vẫn đọc rõ.
 
 ### Done when
 

@@ -180,15 +180,15 @@ stateMachine.progress
 
 ### Checklist
 
-- [ ] Viết test transition theo đúng thứ tự state.
-- [ ] Viết test `progress` luôn nằm trong `[0, 1]` với state hữu hạn.
-- [ ] Viết test `END` không tự thoát cho tới khi reset/replay.
-- [ ] Viết test reset quay về initial state và xóa elapsed time.
-- [ ] Hỗ trợ callback/event `onEnter` và `onExit` theo cách đơn giản, không dùng event framework.
-- [ ] Dùng durations từ `04-animation-state-machine.md` làm default config, nhưng cho phép override để test nhanh.
-- [ ] Không import renderer, scene hoặc Three.js vào StateMachine.
-- [ ] Không dùng `setTimeout`/`setInterval` để điều khiển timeline; chỉ tiến bằng `update(dt)`.
-- [ ] Chạy tests.
+- [x] Viết test transition theo đúng thứ tự state.
+- [x] Viết test `progress` luôn nằm trong `[0, 1]` với state hữu hạn.
+- [x] Viết test `END` không tự thoát cho tới khi reset/replay.
+- [x] Viết test reset quay về initial state và xóa elapsed time.
+- [x] Hỗ trợ callback/event `onEnter` và `onExit` theo cách đơn giản, không dùng event framework.
+- [x] Dùng durations từ `04-animation-state-machine.md` làm default config, nhưng cho phép override để test nhanh.
+- [x] Không import renderer, scene hoặc Three.js vào StateMachine.
+- [x] Không dùng `setTimeout`/`setInterval` để điều khiển timeline; chỉ tiến bằng `update(dt)`.
+- [x] Chạy tests.
 
 ### Done when
 

@@ -22,7 +22,7 @@ export class PostProcessing {
     this.bloomIntensity = profile.bloomIntensity ?? 1.0;
     this.enabled = this.bloomScale > 0 && this.bloomIntensity > 0;
 
-    this.baseStrength = 0.52 * this.bloomIntensity;
+    this.baseStrength = 0.62 * this.bloomIntensity;
     this.currentStrength = this.baseStrength;
 
     if (this.enabled && typeof renderer?.getPixelRatio === 'function') {
@@ -35,13 +35,13 @@ export class PostProcessing {
         Math.max(1, height * this.bloomScale),
       );
 
-      // threshold: 0.24 keeps dark burgundy backdrop crisp and unaffected;
-      // only velvety highlights, emissive petal veins, and inner core glow will bloom softly
+      // threshold: 0.20 keeps dark burgundy backdrop crisp and deep black;
+      // only velvety highlights, luminous petal edges, and inner core glow will bloom softly
       this.bloomPass = new UnrealBloomPass(
         resolution,
         this.baseStrength,
-        0.52, // radius
-        0.24, // threshold
+        0.58, // radius
+        0.20, // threshold
       );
       this.composer.addPass(this.bloomPass);
 

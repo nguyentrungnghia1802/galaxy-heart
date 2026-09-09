@@ -80,7 +80,7 @@ export class App {
       seed: options.explosionSeed ?? 0x50455441,
     });
     this.petalSystem.attachToHeart(anchors);
-    this.petalSystem.material.emissive.setHex(0x32000d);
+    this.petalSystem.material.emissive.setHex(0x4a0414);
     this.scene.add(this.petalSystem.mesh);
 
     this.heartSystem = new HeartSystem();
@@ -211,7 +211,7 @@ export class App {
   updatePlaceholderSystems(dt = 0.016) {
     const { state, progress, heartbeatIntensity } = this.stateSnapshot;
     this.petalSystem.material.emissiveIntensity =
-      0.08 + Math.min(2, heartbeatIntensity) * 0.24;
+      0.16 + Math.min(2, heartbeatIntensity) * 0.32;
 
     if (this.lightingSystem) {
       this.lightingSystem.update(dt, this.stateSnapshot);

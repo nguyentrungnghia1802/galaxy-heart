@@ -846,16 +846,16 @@ git commit -m "feat(ui): add preload replay and webgl fallback"
 
 ### Checklist
 
-- [ ] Test viewport desktop 1920×1080 / 1440×900 hoặc tương đương.
-- [ ] Test mobile portrait ~390×844.
-- [ ] Test mobile landscape.
-- [ ] Heart nằm trong safe visual area ở cả portrait/landscape.
-- [ ] Kiểm tra DPR cap hoạt động theo profile.
-- [ ] Nếu overdraw cao: tối ưu petal material/alpha/bloom trước, không thay kiến trúc.
-- [ ] Foreground petals đủ tạo depth nhưng không che frame lâu.
-- [ ] Low profile ưu tiên stable FPS hơn petal count.
-- [ ] Không auto-loop cinematic vô hạn sau END.
-- [ ] Kiểm tra heat/GPU usage bằng cách để END đứng yên một lúc.
+- [x] Test viewport desktop 1920×1080 / 1440×900 hoặc tương đương.
+- [x] Test mobile portrait ~390×844.
+- [x] Test mobile landscape.
+- [x] Heart nằm trong safe visual area ở cả portrait/landscape.
+- [x] Kiểm tra DPR cap hoạt động theo profile.
+- [x] Nếu overdraw cao: tối ưu petal material/alpha/bloom trước, không thay kiến trúc.
+- [x] Foreground petals đủ tạo depth nhưng không che frame lâu.
+- [x] Low profile ưu tiên stable FPS hơn petal count.
+- [x] Không auto-loop cinematic vô hạn sau END.
+- [x] Kiểm tra heat/GPU usage bằng cách để END đứng yên một lúc.
 
 ### Done when
 

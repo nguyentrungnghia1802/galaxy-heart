@@ -15,6 +15,7 @@ export class PetalBuffers {
     this.rotation = new Float32Array(count * 4);
     this.angularVelocity = new Float32Array(count * 3);
     this.noiseSeed = new Float32Array(count);
+    this.foreground = new Uint8Array(count);
     this.active = new Uint8Array(count);
   }
 
@@ -45,6 +46,7 @@ export class PetalBuffers {
     this.velocity.fill(0);
     this.rotation.set(this.baseRotation);
     this.angularVelocity.fill(0);
+    this.foreground.fill(0);
     this.active.fill(1);
   }
 }

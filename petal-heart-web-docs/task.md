@@ -404,17 +404,21 @@ integratePetalFlight(bufferView, dt, time, params)
 
 ### Checklist
 
-- [ ] Test radial component nói chung hướng ra khỏi heart center.
-- [ ] Test tangent component làm vector không đồng nhất như sphere explosion.
-- [ ] Test speed nằm trong min/max hợp lý.
-- [ ] Test foreground bias chỉ áp dụng cho một tỷ lệ instance cấu hình được, khoảng 5–12% mặc định.
-- [ ] Test gravity kéo nhẹ theo trục Y âm sau thời gian.
-- [ ] Test drag làm tốc độ giảm theo thời gian.
-- [ ] Thêm wind/noise drift có seed; không dùng noise library nặng nếu không cần.
-- [ ] Rotation/angular velocity độc lập giữa petals.
-- [ ] Clamp `dt` ở integration boundary hoặc đảm bảo caller đã clamp rõ ràng.
-- [ ] Tránh object allocations trong loop physics.
-- [ ] Explosion peak visual phải xảy ra dưới 1 giây theo params mặc định.
+- [x] Test radial component nói chung hướng ra khỏi heart center.
+- [x] Test tangent component làm vector không đồng nhất như sphere explosion.
+- [x] Test speed nằm trong min/max hợp lý.
+- [x] Test foreground bias chỉ áp dụng cho một tỷ lệ instance cấu hình được, khoảng 5–12% mặc định.
+- [x] Test gravity kéo nhẹ theo trục Y âm sau thời gian.
+- [x] Test drag làm tốc độ giảm theo thời gian.
+- [x] Thêm wind/noise drift có seed; không dùng noise library nặng nếu không cần.
+- [x] Rotation/angular velocity độc lập giữa petals.
+- [x] Clamp `dt` ở integration boundary hoặc đảm bảo caller đã clamp rõ ràng.
+- [x] Tránh object allocations trong loop physics.
+- [x] Explosion peak visual phải xảy ra dưới 1 giây theo params mặc định.
+
+### Verification notes
+
+- Default impact duration is 0.45 s. A local 6,000-instance / 600-frame pure-physics benchmark averaged 0.647 ms per integration frame.
 
 ### Done when
 

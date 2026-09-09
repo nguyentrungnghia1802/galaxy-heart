@@ -171,6 +171,10 @@ describe('RendererSystem', () => {
     system.resize(900, 600, camera);
 
     expect(renderer.setPixelRatio).toHaveBeenCalledWith(1.5);
+    expect(renderer.outputColorSpace).toBe(THREE.SRGBColorSpace);
+    expect(renderer.toneMapping).toBe(THREE.ACESFilmicToneMapping);
+    expect(renderer.toneMappingExposure).toBeGreaterThanOrEqual(0.8);
+    expect(renderer.toneMappingExposure).toBeLessThanOrEqual(1);
     expect(renderer.setSize).toHaveBeenCalledWith(900, 600, false);
     expect(camera.aspect).toBe(1.5);
     system.render(new THREE.Scene(), camera);

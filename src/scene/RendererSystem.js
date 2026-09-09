@@ -19,6 +19,9 @@ export class RendererSystem {
         powerPreference: 'high-performance',
       });
     this.canvas = this.renderer.domElement;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 0.9;
     this.renderer.setPixelRatio(
       Math.min(Math.max(1, devicePixelRatio || 1), profile.dprCap),
     );

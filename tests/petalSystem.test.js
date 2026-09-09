@@ -58,6 +58,50 @@ describe('createPetalGeometry', () => {
 });
 
 describe('PetalSystem', () => {
+  it('uses a soft non-metallic petal material with natural rose color range', () => {
+    const anchors = createHeartAnchors({ count: 600, seed: 1234 });
+    const system = new PetalSystem({ count: anchors.length });
+    system.attachToHeart(anchors);
+
+    const colors = system.mesh.instanceColor.array;
+    let darkestLuminance = Infinity;
+    let brightestLuminance = -Infinity;
+    let pinkHighlightCount = 0;
+
+    for (let index = 0; index < colors.length; index += 3) {
+      const red = colors[index];
+      const green = colors[index + 1];
+      const blue = colors[index + 2];
+      const luminance = red * 0.2126 + green * 0.7152 + blue * 0.0722;
+      darkestLuminance = Math.min(darkestLuminance, luminance);
+      brightestLuminance = Math.max(brightestLuminance, luminance);
+      if (blue > green * 1.3 && red > blue * 1.8) {
+        pinkHighlightCount += 1;
+      }
+    }
+
+    expect(system.material).toBeInstanceOf(THREE.MeshPhysicalMaterial);
+    expect(system.material.metalness).toBe(0);
+    expect(system.material.sheen).toBeGreaterThan(0.5);
+    expect(darkestLuminance).toBeLessThan(0.08);
+    expect(brightestLuminance).toBeGreaterThan(0.45);
+    expect(pinkHighlightCount).toBeGreaterThan(20);
+    system.dispose();
+  });
+
+  it('treats the petal texture as color detail without turning it into a roughness or alpha mask', () => {
+    const system = new PetalSystem({ count: 1 });
+    const texture = new THREE.Texture();
+
+    system.setTexture(texture);
+
+    expect(texture.colorSpace).toBe(THREE.SRGBColorSpace);
+    expect(system.material.map).toBe(texture);
+    expect(system.material.roughnessMap).toBeNull();
+    expect(system.material.transparent).toBe(false);
+    system.dispose();
+  });
+
   it('maps anchors into one InstancedMesh and preserves mesh identity', () => {
     const anchors = createHeartAnchors({ count: 24, seed: 1234 });
     const system = new PetalSystem({ count: anchors.length });

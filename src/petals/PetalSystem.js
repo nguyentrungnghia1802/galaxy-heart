@@ -51,10 +51,15 @@ export class PetalSystem {
     this.geometry = geometry ?? createPetalGeometry();
     this.material =
       material ??
-      new THREE.MeshStandardMaterial({
+      new THREE.MeshPhysicalMaterial({
         color: 0xffffff,
-        roughness: 0.42,
-        metalness: 0.04,
+        roughness: 0.58,
+        metalness: 0,
+        sheen: 0.85,
+        sheenColor: 0xff8eaa,
+        sheenRoughness: 0.68,
+        clearcoat: 0.04,
+        clearcoatRoughness: 0.9,
         side: THREE.DoubleSide,
         vertexColors: true,
       });
@@ -321,10 +326,11 @@ export class PetalSystem {
     if (!this.material || !texture) {
       return;
     }
+    texture.colorSpace = THREE.SRGBColorSpace;
     this.material.map = texture;
-    this.material.roughnessMap = texture;
-    this.material.alphaTest = 0.05;
-    this.material.transparent = true;
+    this.material.roughnessMap = null;
+    this.material.alphaTest = 0;
+    this.material.transparent = false;
     this.material.depthWrite = true;
     this.material.needsUpdate = true;
   }

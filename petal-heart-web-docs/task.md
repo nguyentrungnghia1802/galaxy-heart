@@ -287,16 +287,21 @@ noiseSeed
 
 ### Checklist
 
-- [ ] Chọn một heart parametric/implicit representation có chiều sâu thật, không phải curve 2D extrude mỏng.
-- [ ] Viết test đúng số lượng anchor.
-- [ ] Viết test output finite: không `NaN`, không `Infinity`.
-- [ ] Viết test deterministic với cùng seed.
-- [ ] Viết test normal gần normalized.
-- [ ] Tránh random uniform thô gây cụm lớn/lỗ lớn; dùng stratified/rejection/density sampling đơn giản nhưng ổn định.
-- [ ] Density ưu tiên silhouette/outer shell đủ để heart nhìn đặc khi render.
-- [ ] Không phụ thuộc model `.glb` cho V1.
-- [ ] Có dev/debug hook hoặc helper để render anchors dạng points tạm thời và kiểm tra silhouette.
-- [ ] Benchmark thời gian tạo 1,500 / 3,000 / 6,000 anchors; chỉ chạy lúc init, không mỗi frame.
+- [x] Chọn một heart parametric/implicit representation có chiều sâu thật, không phải curve 2D extrude mỏng.
+- [x] Viết test đúng số lượng anchor.
+- [x] Viết test output finite: không `NaN`, không `Infinity`.
+- [x] Viết test deterministic với cùng seed.
+- [x] Viết test normal gần normalized.
+- [x] Tránh random uniform thô gây cụm lớn/lỗ lớn; dùng stratified/rejection/density sampling đơn giản nhưng ổn định.
+- [x] Density ưu tiên silhouette/outer shell đủ để heart nhìn đặc khi render.
+- [x] Không phụ thuộc model `.glb` cho V1.
+- [x] Có dev/debug hook hoặc helper để render anchors dạng points tạm thời và kiểm tra silhouette.
+- [x] Benchmark thời gian tạo 1,500 / 3,000 / 6,000 anchors; chỉ chạy lúc init, không mỗi frame.
+
+### Verification notes
+
+- 2026-09-09, local Node.js init benchmark: 1,500 = 4.22 ms; 3,000 = 4.63 ms; 6,000 = 3.87 ms (single-run values, subject to JIT variance).
+- `?debugAnchors` renders the packed anchors as rotating `THREE.Points`; front view confirms the heart silhouette and the rotated view confirms real depth/occlusion.
 
 ### Done when
 

@@ -1,5 +1,10 @@
 import * as THREE from 'three';
 
+import {
+  createHeartAnchors,
+  createHeartDebugPositions,
+} from '../heart/HeartSurface.js';
+
 export class App {
   constructor(container) {
     if (!container) {
@@ -21,14 +26,7 @@ export class App {
     );
     this.container.append(this.renderer.domElement);
 
-    const geometry = new THREE.OctahedronGeometry(1, 2);
-    const material = new THREE.MeshStandardMaterial({
-      color: 0xc41245,
-      roughness: 0.42,
-      metalness: 0.08,
-    });
-
-    this.placeholder = new THREE.Mesh(geometry, material);
+    this.placeholder = this.createPlaceholder();
     this.scene.add(this.placeholder);
     this.scene.add(new THREE.AmbientLight(0xff8da8, 1.2));
 
@@ -40,6 +38,27 @@ export class App {
     this.previousTime = 0;
     this.resize = this.resize.bind(this);
     this.renderFrame = this.renderFrame.bind(this);
+  }
+
+  createPlaceholder() {
+    if (new URLSearchParams(window.location.search).has('debugAnchors')) {
+      const geometry = new THREE.BufferGeometry();
+      const anchors = createHeartAnchors({ count: 3_000, seed: 1234 });
+      geometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(createHeartDebugPositions(anchors), 3),
+      );
+      const material = new THREE.PointsMaterial({ color: 0xff315f, size: 0.028 });
+      return new THREE.Points(geometry, material);
+    }
+
+    const geometry = new THREE.OctahedronGeometry(1, 2);
+    const material = new THREE.MeshStandardMaterial({
+      color: 0xc41245,
+      roughness: 0.42,
+      metalness: 0.08,
+    });
+    return new THREE.Mesh(geometry, material);
   }
 
   start() {
@@ -76,4 +95,3 @@ export class App {
     this.renderer.domElement.remove();
   }
 }
-

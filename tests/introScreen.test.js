@@ -13,6 +13,7 @@ describe('Intro Screen & Curtain Split', () => {
     expect(htmlContent).toContain('class="pixel-heart-svg"');
     expect(htmlContent).toContain('id="open-heart-btn"');
     expect(htmlContent).toContain('Mở cửa trái tim');
+    expect(htmlContent).toContain('id="sound-toggle"');
   });
 
   it('renders a 2D pixel-art Minecraft style SVG heart with crispEdges', () => {

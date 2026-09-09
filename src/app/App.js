@@ -5,6 +5,7 @@ import { HeartSystem } from '../heart/HeartSystem.js';
 import { PetalSystem } from '../petals/PetalSystem.js';
 import { GemSystem } from '../gem/GemSystem.js';
 import { LoveTextSystem } from '../text/LoveTextSystem.js';
+import { SoundSystem } from '../audio/SoundSystem.js';
 import { PostProcessing } from '../fx/PostProcessing.js';
 import { createScene } from '../scene/createScene.js';
 import { RendererSystem } from '../scene/RendererSystem.js';
@@ -106,6 +107,9 @@ export class App {
       options.loveTextSystem ??
       new LoveTextSystem({ camera: this.camera });
     this.scene.add(this.loveTextSystem.group);
+
+    this.soundSystem =
+      options.soundSystem ?? new SoundSystem();
 
     this.raycaster = new THREE.Raycaster();
     this.mouseNDC = new THREE.Vector2(-999, -999);
@@ -210,6 +214,7 @@ export class App {
       currentState === 'GEM_IDLE' ||
       currentState === 'PETAL_FLIGHT'
     ) {
+      this.soundSystem?.playCrystalChime();
       this.gemSystem.triggerBurst();
       this.stateMachine.transitionTo('GEM_BURST');
     }
@@ -268,6 +273,7 @@ export class App {
     this.petalSystem.update(dt, this.stateSnapshot);
     this.gemSystem?.update(dt, this.stateSnapshot);
     this.loveTextSystem?.update(dt, this.stateSnapshot);
+    this.soundSystem?.update(dt, this.stateSnapshot, this.heartSystem);
     this.updatePlaceholderSystems(dt);
     if (this.postProcessing?.enabled) {
       this.postProcessing.update(dt, this.stateSnapshot);
@@ -358,8 +364,14 @@ export class App {
     ) {
       this.petalSystem.triggerExplosion(this.stateSnapshot.explosionParams);
     }
+    if (state === 'EXPLOSION') {
+      this.soundSystem?.playExplosion();
+    }
     if (state === 'GEM_BURST') {
       this.gemSystem?.triggerBurst();
+    }
+    if (state === 'LOVE_REVEAL') {
+      this.soundSystem?.playLoveReveal();
     }
     if (state === 'LOVE_REVEAL' || state === 'END') {
       this.loveTextSystem?.reveal();
@@ -407,6 +419,7 @@ export class App {
     this.petalSystem.reset();
     this.gemSystem?.reset();
     this.loveTextSystem?.reset();
+    this.soundSystem?.reset();
     this.lightingSystem?.reset();
     this.cameraSystem?.reset();
     this.stateMachine.reset();
@@ -441,6 +454,7 @@ export class App {
     }
     this.gemSystem?.dispose();
     this.loveTextSystem?.dispose();
+    this.soundSystem?.dispose();
     this.petalSystem.dispose();
     this.postProcessing?.dispose();
     this.rendererSystem.dispose();

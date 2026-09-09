@@ -116,12 +116,12 @@ clampDeltaTime(dt, maxDt)
 
 ### Checklist
 
-- [ ] Viết test trước cho cùng seed → cùng chuỗi random.
-- [ ] Test seed khác → chuỗi khác.
-- [ ] Test `clampDeltaTime()` không cho delta lớn hơn ngưỡng cấu hình.
-- [ ] Implement PRNG nhỏ, deterministic, không phụ thuộc library lớn.
-- [ ] Không tạo object/array mới trong hot loop nếu utility được gọi mỗi petal mỗi frame.
-- [ ] Chạy toàn bộ unit tests.
+- [x] Viết test trước cho cùng seed → cùng chuỗi random.
+- [x] Test seed khác → chuỗi khác.
+- [x] Test `clampDeltaTime()` không cho delta lớn hơn ngưỡng cấu hình.
+- [x] Implement PRNG nhỏ, deterministic, không phụ thuộc library lớn.
+- [x] Không tạo object/array mới trong hot loop nếu utility được gọi mỗi petal mỗi frame.
+- [x] Chạy toàn bộ unit tests.
 
 ### Done when
 

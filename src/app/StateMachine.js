@@ -10,6 +10,9 @@ export const CINEMATIC_STATES = Object.freeze([
   'TENSION',
   'EXPLOSION',
   'PETAL_FLIGHT',
+  'GEM_IDLE',
+  'GEM_BURST',
+  'LOVE_REVEAL',
   'END',
 ]);
 
@@ -20,9 +23,12 @@ export const DEFAULT_STATE_DURATIONS = Object.freeze({
   HEART_IDLE: 0.8,
   HEARTBEAT: 2.4,
   RAPID_HEARTBEAT: 2.2,
-  TENSION: 0.35,
+  TENSION: 0.65,
   EXPLOSION: 0.45,
-  PETAL_FLIGHT: 6,
+  PETAL_FLIGHT: 2.8,
+  GEM_IDLE: Number.POSITIVE_INFINITY,
+  GEM_BURST: 1.2,
+  LOVE_REVEAL: 2.2,
   END: Number.POSITIVE_INFINITY,
 });
 
@@ -77,16 +83,16 @@ export class StateMachine {
       const duration = Math.max(0, this.durations[this.state]);
       const timeToBoundary = Math.max(0, duration - this.elapsed);
 
-      if (remaining < timeToBoundary) {
+      if (remaining < timeToBoundary - 1e-9) {
         this.elapsed += remaining;
         break;
       }
 
-      remaining -= timeToBoundary;
+      remaining = Math.max(0, remaining - timeToBoundary);
       this.elapsed = duration;
       this.advanceState();
 
-      if (remaining === 0 && this.durations[this.state] > 0) {
+      if (remaining <= 1e-9 && this.durations[this.state] > 0) {
         break;
       }
     }
@@ -113,5 +119,23 @@ export class StateMachine {
     this.stateIndex += 1;
     this.elapsed = 0;
     this.onEnter?.(nextState, previousState);
+  }
+
+  transitionTo(targetState) {
+    const targetIndex = CINEMATIC_STATES.indexOf(targetState);
+    if (targetIndex === -1 || targetIndex === this.stateIndex) {
+      return;
+    }
+    const previousState = this.state;
+    this.onExit?.(previousState, targetState);
+    this.stateIndex = targetIndex;
+    this.elapsed = 0;
+    this.onEnter?.(targetState, previousState);
+  }
+
+  triggerGemClick() {
+    if (this.state === 'GEM_IDLE' || this.state === 'PETAL_FLIGHT') {
+      this.transitionTo('GEM_BURST');
+    }
   }
 }

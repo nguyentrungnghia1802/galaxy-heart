@@ -348,7 +348,7 @@ export class PetalSystem {
         stateSnapshot?.heartScale ?? 1,
         stateSnapshot,
       );
-    } else if (state === 'EXPLOSION' || state === 'PETAL_FLIGHT') {
+    } else {
       if (this.explosionCount === 0) {
         this.triggerExplosion(stateSnapshot?.explosionParams);
       }

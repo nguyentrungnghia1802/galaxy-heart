@@ -70,6 +70,9 @@ function createFastDurations() {
     TENSION: 0.01,
     EXPLOSION: 0.01,
     PETAL_FLIGHT: 0.03,
+    GEM_IDLE: 0.02,
+    GEM_BURST: 0.02,
+    LOVE_REVEAL: 0.02,
   };
 }
 
@@ -103,6 +106,7 @@ function createHarness({ durations = createFastDurations() } = {}) {
       flutterEnabled: false,
     }),
     durations,
+    continuousEndLoop: false,
     documentTarget,
     windowTarget,
     replayButton,
@@ -201,12 +205,17 @@ describe('App core integration', () => {
       'TENSION',
       'EXPLOSION',
       'PETAL_FLIGHT',
+      'GEM_IDLE',
+      'GEM_BURST',
+      'LOVE_REVEAL',
       'END',
     ]);
     expect(harness.app.stateMachine.state).toBe('END');
     expect(harness.app.petalSystem.explosionCount).toBe(1);
     expect(harness.app.petalSystem.mesh).toBe(mesh);
-    expect(harness.replayButton.hidden).toBe(false);
+    expect(harness.app.gemSystem).toBeDefined();
+    expect(harness.app.loveTextSystem).toBeDefined();
+    expect(harness.replayButton.hidden).toBe(true);
     expect(harness.loadingElement.hidden).toBe(true);
     expect(harness.rendererSystem.render).toHaveBeenCalled();
     harness.app.dispose();

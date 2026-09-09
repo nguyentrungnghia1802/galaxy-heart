@@ -90,16 +90,40 @@ describe('StateMachine', () => {
     expect(machine.state).toBe('BOOT');
   });
 
-  it('simulates the default cinematic into END without browser timers', () => {
+  it('simulates the default cinematic through GEM_IDLE and user click into END', () => {
     const machine = new StateMachine();
-    const finiteDuration = Object.values(DEFAULT_STATE_DURATIONS)
-      .filter(Number.isFinite)
-      .reduce((sum, duration) => sum + duration, 0);
-
     machine.start();
-    machine.update(finiteDuration);
+    const preIdleDuration =
+      DEFAULT_STATE_DURATIONS.INTRO +
+      DEFAULT_STATE_DURATIONS.HEART_IDLE +
+      DEFAULT_STATE_DURATIONS.HEARTBEAT +
+      DEFAULT_STATE_DURATIONS.RAPID_HEARTBEAT +
+      DEFAULT_STATE_DURATIONS.TENSION +
+      DEFAULT_STATE_DURATIONS.EXPLOSION +
+      DEFAULT_STATE_DURATIONS.PETAL_FLIGHT;
 
-    expect(finiteDuration).toBe(13.4);
+    machine.update(preIdleDuration);
+    expect(machine.state).toBe('GEM_IDLE');
+
+    // Trigger user click on gem
+    machine.triggerGemClick();
+    expect(machine.state).toBe('GEM_BURST');
+
+    const postBurstDuration =
+      DEFAULT_STATE_DURATIONS.GEM_BURST +
+      DEFAULT_STATE_DURATIONS.LOVE_REVEAL;
+
+    machine.update(postBurstDuration);
     expect(machine.state).toBe('END');
   });
+
+  it('allows manual transitionTo between valid states', () => {
+    const machine = new StateMachine();
+    machine.start();
+    machine.transitionTo('GEM_IDLE');
+    expect(machine.state).toBe('GEM_IDLE');
+    machine.triggerGemClick();
+    expect(machine.state).toBe('GEM_BURST');
+  });
 });
+

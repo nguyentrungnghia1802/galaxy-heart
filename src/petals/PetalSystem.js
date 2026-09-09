@@ -352,6 +352,23 @@ export class PetalSystem {
       if (this.explosionCount === 0) {
         this.triggerExplosion(stateSnapshot?.explosionParams);
       }
+      // If jumping or entering post-flight states directly, ensure flight is advanced to dispersed state
+      if (
+        (state === 'GEM_IDLE' ||
+          state === 'GEM_BURST' ||
+          state === 'LOVE_REVEAL' ||
+          state === 'END') &&
+        this.flightTime < 2.5
+      ) {
+        const jumpDt = 2.5 - this.flightTime;
+        integratePetalFlight(
+          this.buffers,
+          jumpDt,
+          this.flightTime,
+          stateSnapshot?.flightParams,
+        );
+        this.flightTime = 2.5;
+      }
       const integratedDt = integratePetalFlight(
         this.buffers,
         dt,

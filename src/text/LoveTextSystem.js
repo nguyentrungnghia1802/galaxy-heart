@@ -7,7 +7,8 @@ import { clamp, easeOutCubic, lerp } from '../utils/math.js';
 export class LoveTextSystem {
   constructor(options = {}) {
     this.group = new THREE.Group();
-    this.basePosition = new THREE.Vector3(0, 0.68, 0.2);
+    this.camera = options.camera ?? null;
+    this.basePosition = new THREE.Vector3(0, 0.82, 0.15);
     this.group.position.copy(this.basePosition);
     this.time = 0;
     this.revealProgress = 0;
@@ -34,46 +35,33 @@ export class LoveTextSystem {
 
     // 2. Dual-Tone Romantic Materials (face = radiant blush-white, sides = glowing ruby-rose)
     this.faceMat = new THREE.MeshPhysicalMaterial({
-      color: 0xfff2f6,
-      emissive: 0x5a0a22,
-      emissiveIntensity: 0.45,
-      roughness: 0.22,
-      metalness: 0.12,
-      clearcoat: 0.85,
+      color: 0xfff6f9,
+      emissive: 0x3d0b1a,
+      emissiveIntensity: 0.4,
+      roughness: 0.18,
+      metalness: 0.1,
+      clearcoat: 0.9,
       clearcoatRoughness: 0.08,
       side: THREE.FrontSide,
     });
 
     this.sideMat = new THREE.MeshPhysicalMaterial({
-      color: 0xe81850,
-      emissive: 0x8a0525,
-      emissiveIntensity: 0.75,
-      roughness: 0.32,
-      metalness: 0.2,
-      clearcoat: 0.5,
+      color: 0xeb1d53,
+      emissive: 0x8f0c2c,
+      emissiveIntensity: 0.8,
+      roughness: 0.28,
+      metalness: 0.15,
+      clearcoat: 0.6,
       side: THREE.FrontSide,
     });
 
     this.textMesh = new THREE.Mesh(textGeo, [this.faceMat, this.sideMat]);
     this.group.add(this.textMesh);
 
-    // 3. Ambient Text Backlight / Soft Aura
+    // 3. Ambient Text Soft Point Light
     this.textLight = new THREE.PointLight(0xff4070, 0, 4.0, 2.0);
     this.textLight.position.set(0, 0, 0.3);
     this.group.add(this.textLight);
-
-    // 4. Subtle Ambient Halo behind text
-    const haloGeo = new THREE.PlaneGeometry(2.6, 0.9);
-    this.haloMat = new THREE.MeshBasicMaterial({
-      color: 0xff1848,
-      transparent: true,
-      opacity: 0,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-    this.haloMesh = new THREE.Mesh(haloGeo, this.haloMat);
-    this.haloMesh.position.set(0, 0, -0.05);
-    this.group.add(this.haloMesh);
 
     // Initial hidden state
     this.group.visible = false;
@@ -123,18 +111,23 @@ export class LoveTextSystem {
     this.textMesh.rotation.y = swayY;
     this.textMesh.rotation.x = tiltX;
 
-    // 3. Scale & Shimmer
+    // 3. Scale, Responsive Mobile Fit & Shimmer
+    const aspect =
+      this.camera?.aspect ??
+      (typeof window !== 'undefined' && window.innerHeight
+        ? window.innerWidth / window.innerHeight
+        : 1);
+    const responsiveScale = aspect < 1.0 ? clamp(aspect * 1.35, 0.62, 1.0) : 1.0;
     const breath = 1.0 + Math.sin(this.time * 2.0) * 0.018;
-    const s = scaleFactor * breath;
+    const s = scaleFactor * breath * responsiveScale;
     this.group.scale.set(s, s, s);
 
     // 4. Lighting & Emissive Flare during reveal, settling into warm glow
     const flashBoost =
       state === 'LOVE_REVEAL' ? Math.sin(progress * Math.PI) * 1.8 : 0;
-    this.faceMat.emissiveIntensity = 0.45 + flashBoost * 0.6;
-    this.sideMat.emissiveIntensity = 0.75 + flashBoost * 1.2;
+    this.faceMat.emissiveIntensity = 0.4 + flashBoost * 0.6;
+    this.sideMat.emissiveIntensity = 0.8 + flashBoost * 1.2;
     this.textLight.intensity = (1.8 + flashBoost * 3.0) * t;
-    this.haloMat.opacity = clamp((0.25 + flashBoost * 0.35) * t, 0, 1);
   }
 
   reset() {
@@ -145,7 +138,6 @@ export class LoveTextSystem {
     this.group.scale.set(0.001, 0.001, 0.001);
     this.group.position.copy(this.basePosition);
     this.textLight.intensity = 0;
-    this.haloMat.opacity = 0;
   }
 
   dispose() {
@@ -153,8 +145,6 @@ export class LoveTextSystem {
     this.textMesh.geometry.dispose();
     this.faceMat.dispose();
     this.sideMat.dispose();
-    this.haloMesh.geometry.dispose();
-    this.haloMat.dispose();
     this.textLight.dispose();
     this.group.removeFromParent();
   }

@@ -54,6 +54,10 @@ if (!isWebGLAvailable()) {
     })
     .finally(() => {
       app.start();
+      const jumpState = import.meta.env.DEV ? params.get('jumpState') : null;
+      if (jumpState && typeof app.stateMachine?.transitionTo === 'function') {
+        app.stateMachine.transitionTo(jumpState);
+      }
     });
 
   if (import.meta.env.DEV) {

@@ -4,6 +4,26 @@ import { GemBurst } from './GemBurst.js';
 
 const ORBIT_SPARKLE_COUNT = 18;
 
+function createSparkleTexture() {
+  if (typeof document === 'undefined' || !document.createElement) {
+    return null;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = 32;
+  canvas.height = 32;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+  grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+  grad.addColorStop(0.3, 'rgba(255, 220, 240, 0.85)');
+  grad.addColorStop(0.7, 'rgba(255, 80, 140, 0.25)');
+  grad.addColorStop(1, 'rgba(255, 30, 80, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 32, 32);
+  const texture = new THREE.CanvasTexture(canvas);
+  return texture;
+}
+
 export class GemSystem {
   constructor(options = {}) {
     this.group = new THREE.Group();
@@ -93,15 +113,20 @@ export class GemSystem {
       'position',
       new THREE.BufferAttribute(this.sparklePositions, 3),
     );
-    this.orbitMat = new THREE.PointsMaterial({
+    this.sparkleTex = createSparkleTexture();
+    const orbitMatConfig = {
       color: 0xfff2f8,
-      size: 0.12,
+      size: 0.16,
       transparent: true,
       opacity: 0.85,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       sizeAttenuation: true,
-    });
+    };
+    if (this.sparkleTex) {
+      orbitMatConfig.map = this.sparkleTex;
+    }
+    this.orbitMat = new THREE.PointsMaterial(orbitMatConfig);
     this.orbitPoints = new THREE.Points(orbitGeo, this.orbitMat);
     this.group.add(this.orbitPoints);
 
@@ -254,6 +279,7 @@ export class GemSystem {
     this.rippleMat.dispose();
     this.orbitPoints.geometry.dispose();
     this.orbitMat.dispose();
+    this.sparkleTex?.dispose();
     this.hitMesh.geometry.dispose();
     this.hitMesh.material.dispose();
     this.gemLight.dispose();

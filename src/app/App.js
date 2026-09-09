@@ -103,7 +103,8 @@ export class App {
     this.scene.add(this.gemSystem.group);
 
     this.loveTextSystem =
-      options.loveTextSystem ?? new LoveTextSystem();
+      options.loveTextSystem ??
+      new LoveTextSystem({ camera: this.camera });
     this.scene.add(this.loveTextSystem.group);
 
     this.raycaster = new THREE.Raycaster();
@@ -343,17 +344,24 @@ export class App {
   handleStateEnter(state, previousState) {
     if (state === 'PRELOAD' && this.loadingElement) {
       this.loadingElement.hidden = false;
-    }
-    if (state === 'INTRO' && this.loadingElement) {
+    } else if (this.loadingElement) {
       this.loadingElement.hidden = true;
     }
-    if (state === 'EXPLOSION') {
+    if (
+      (state === 'EXPLOSION' ||
+        state === 'PETAL_FLIGHT' ||
+        state === 'GEM_IDLE' ||
+        state === 'GEM_BURST' ||
+        state === 'LOVE_REVEAL' ||
+        state === 'END') &&
+      this.petalSystem.explosionCount === 0
+    ) {
       this.petalSystem.triggerExplosion(this.stateSnapshot.explosionParams);
     }
     if (state === 'GEM_BURST') {
       this.gemSystem?.triggerBurst();
     }
-    if (state === 'LOVE_REVEAL') {
+    if (state === 'LOVE_REVEAL' || state === 'END') {
       this.loveTextSystem?.reveal();
     }
     this.onStateEnter?.(state, previousState);

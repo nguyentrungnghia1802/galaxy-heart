@@ -108,9 +108,8 @@ if (!isWebGLAvailable()) {
       if (openingStarted) return;
       openingStarted = true;
 
-      // Unlock AudioContext and play sweet celestial intro click chime
+      // Unlock AudioContext cleanly on user interaction
       app.soundSystem?.unlock();
-      app.soundSystem?.playIntroClick();
 
       // 1. Intro screen freezes completely for ~1 second
       introScreenEl.classList.add('is-frozen');
@@ -119,8 +118,6 @@ if (!isWebGLAvailable()) {
       setTimeout(() => {
         introScreenEl.classList.remove('is-frozen');
         introScreenEl.classList.add('is-splitting');
-        // Play 2-second sweeping curtain whoosh
-        app.soundSystem?.playCurtainWhoosh();
         // Main scene starts running automatically
         launchMainScene();
 

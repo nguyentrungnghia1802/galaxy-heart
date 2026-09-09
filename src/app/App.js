@@ -214,7 +214,6 @@ export class App {
       currentState === 'GEM_IDLE' ||
       currentState === 'PETAL_FLIGHT'
     ) {
-      this.soundSystem?.playCrystalChime();
       this.gemSystem.triggerBurst();
       this.stateMachine.transitionTo('GEM_BURST');
     }
@@ -364,14 +363,8 @@ export class App {
     ) {
       this.petalSystem.triggerExplosion(this.stateSnapshot.explosionParams);
     }
-    if (state === 'EXPLOSION') {
-      this.soundSystem?.playExplosion();
-    }
     if (state === 'GEM_BURST') {
       this.gemSystem?.triggerBurst();
-    }
-    if (state === 'LOVE_REVEAL') {
-      this.soundSystem?.playLoveReveal();
     }
     if (state === 'LOVE_REVEAL' || state === 'END') {
       this.loveTextSystem?.reveal();

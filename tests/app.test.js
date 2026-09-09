@@ -215,6 +215,7 @@ describe('App core integration', () => {
     expect(harness.app.petalSystem.mesh).toBe(mesh);
     expect(harness.app.gemSystem).toBeDefined();
     expect(harness.app.loveTextSystem).toBeDefined();
+    expect(harness.app.soundSystem).toBeDefined();
     expect(harness.replayButton.hidden).toBe(true);
     expect(harness.loadingElement.hidden).toBe(true);
     expect(harness.rendererSystem.render).toHaveBeenCalled();

@@ -20,22 +20,9 @@ class MockGainNode extends MockAudioNode {
   gain = new MockAudioParam(1);
 }
 
-class MockOscillatorNode extends MockAudioNode {
-  frequency = new MockAudioParam(440);
-  detune = new MockAudioParam(0);
-  type = 'sine';
-  start = vi.fn();
-  stop = vi.fn();
-}
-
-class MockBiquadFilterNode extends MockAudioNode {
-  frequency = new MockAudioParam(350);
-  Q = new MockAudioParam(1);
-  type = 'lowpass';
-}
-
 class MockBufferSourceNode extends MockAudioNode {
   buffer = null;
+  onended = null;
   start = vi.fn();
   stop = vi.fn();
 }
@@ -45,7 +32,7 @@ class MockDynamicsCompressorNode extends MockAudioNode {
   knee = new MockAudioParam(12);
   ratio = new MockAudioParam(4);
   attack = new MockAudioParam(0.005);
-  release = new MockAudioParam(0.15);
+  release = new MockAudioParam(0.12);
 }
 
 class MockAudioContext {
@@ -55,8 +42,6 @@ class MockAudioContext {
   destination = new MockAudioNode();
 
   createGain = vi.fn(() => new MockGainNode());
-  createOscillator = vi.fn(() => new MockOscillatorNode());
-  createBiquadFilter = vi.fn(() => new MockBiquadFilterNode());
   createBufferSource = vi.fn(() => new MockBufferSourceNode());
   createDynamicsCompressor = vi.fn(() => new MockDynamicsCompressorNode());
   createBuffer = vi.fn((channels, length, sampleRate) => ({
@@ -74,32 +59,6 @@ class MockAudioContext {
 }
 
 describe('SoundSystem', () => {
-  beforeEach(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.clear();
-    }
-  });
-
-  it('instantiates safely without AudioContext in headless environment', () => {
-    const sound = new SoundSystem({ AudioContext: null });
-    expect(sound).toBeDefined();
-    expect(sound.isMuted()).toBe(false);
-
-    // Calling play methods safely no-ops without throwing
-    expect(() => {
-      sound.playIntroClick();
-      sound.playCurtainWhoosh();
-      sound.playHeartbeat(0.5, false);
-      sound.playExplosion();
-      sound.playGemSparkle();
-      sound.playCrystalChime();
-      sound.playLoveReveal();
-      sound.update(0.016, { state: 'HEARTBEAT' });
-      sound.reset();
-      sound.dispose();
-    }).not.toThrow();
-  });
-
   const createMockStorage = () => {
     const store = new Map();
     return {
@@ -109,6 +68,22 @@ describe('SoundSystem', () => {
       clear: vi.fn(() => store.clear()),
     };
   };
+
+  it('instantiates safely without AudioContext in headless environment', () => {
+    const sound = new SoundSystem({ AudioContext: null });
+    expect(sound).toBeDefined();
+    expect(sound.isMuted()).toBe(false);
+
+    // Calling play methods safely no-ops without throwing
+    expect(() => {
+      sound.playHeartbeat(0.5, false, false);
+      sound.playFinalBeat();
+      sound.playSoftExplosion();
+      sound.update(0.016, { state: 'HEARTBEAT' });
+      sound.reset();
+      sound.dispose();
+    }).not.toThrow();
+  });
 
   it('manages mute state and persists to storage', () => {
     const storage = createMockStorage();
@@ -132,7 +107,7 @@ describe('SoundSystem', () => {
     sound.dispose();
   });
 
-  it('unlocks audio context and starts ambient background', async () => {
+  it('unlocks audio context and builds acoustic buffers', async () => {
     const sound = new SoundSystem({
       AudioContext: MockAudioContext,
     });
@@ -141,12 +116,15 @@ describe('SoundSystem', () => {
     expect(sound.unlocked).toBe(true);
     expect(sound.ctx).toBeDefined();
     expect(sound.ctx.resume).toHaveBeenCalled();
-    expect(sound.ambienceOscs.length).toBe(3);
+    expect(sound.lubBuffer).toBeDefined();
+    expect(sound.dubBuffer).toBeDefined();
+    expect(sound.finalBeatBuffer).toBeDefined();
+    expect(sound.softBurstBuffer).toBeDefined();
 
     sound.dispose();
   });
 
-  it('triggers intro click, curtain whoosh, explosion, and crystal chime without errors', async () => {
+  it('triggers biological heartbeat, final beat, and soft explosion without errors', async () => {
     const sound = new SoundSystem({
       AudioContext: MockAudioContext,
       autoInit: true,
@@ -154,18 +132,16 @@ describe('SoundSystem', () => {
     await sound.unlock();
 
     expect(() => {
-      sound.playIntroClick();
-      sound.playCurtainWhoosh();
-      sound.playExplosion();
-      sound.playGemSparkle();
-      sound.playCrystalChime();
-      sound.playLoveReveal();
+      sound.playHeartbeat(0.5, false, false);
+      sound.playHeartbeat(0.7, true, true);
+      sound.playFinalBeat();
+      sound.playSoftExplosion();
     }).not.toThrow();
 
     sound.dispose();
   });
 
-  it('tracks heartbeat phase crossing for lub and dub pulses', async () => {
+  it('tracks heartbeat phase crossing for lub and dub pulses without overlap', async () => {
     const sound = new SoundSystem({
       AudioContext: MockAudioContext,
       autoInit: true,
@@ -183,12 +159,16 @@ describe('SoundSystem', () => {
     expect(spyHeartbeat).toHaveBeenCalledTimes(1);
     expect(sound.lubTriggered).toBe(true);
 
+    // Phase remains in lub window -> does NOT double trigger!
+    sound.update(0.016, { state: 'HEARTBEAT', heartbeatIntensity: 0.5 }, { phase: 0.12 });
+    expect(spyHeartbeat).toHaveBeenCalledTimes(1);
+
     // Phase enters dub window (~0.28)
     sound.update(0.016, { state: 'HEARTBEAT', heartbeatIntensity: 0.5 }, { phase: 0.28 });
     expect(spyHeartbeat).toHaveBeenCalledTimes(2);
     expect(sound.dubTriggered).toBe(true);
 
-    // Phase wraps around
+    // Phase wraps around to new cycle
     sound.update(0.016, { state: 'HEARTBEAT', heartbeatIntensity: 0.5 }, { phase: 0.02 });
     expect(sound.lubTriggered).toBe(false);
     expect(sound.dubTriggered).toBe(false);
@@ -196,23 +176,36 @@ describe('SoundSystem', () => {
     sound.dispose();
   });
 
-  it('handles tension beats and gem sparkle timer during update', async () => {
+  it('triggers final beat in TENSION and soft explosion in EXPLOSION', async () => {
     const sound = new SoundSystem({
       AudioContext: MockAudioContext,
       autoInit: true,
     });
     await sound.unlock();
 
-    const spyHeartbeat = vi.spyOn(sound, 'playHeartbeat');
-    const spySparkle = vi.spyOn(sound, 'playGemSparkle');
+    const spyFinalBeat = vi.spyOn(sound, 'playFinalBeat');
+    const spyExplosion = vi.spyOn(sound, 'playSoftExplosion');
 
-    // Tension update
-    sound.update(0.5, { state: 'TENSION', progress: 0.8 });
-    expect(spyHeartbeat).toHaveBeenCalled();
+    // Tension before diastolic surge
+    sound.update(0.016, { state: 'TENSION', progress: 0.2 });
+    expect(spyFinalBeat).not.toHaveBeenCalled();
 
-    // Gem idle update over sparkle duration
-    sound.update(3.5, { state: 'GEM_IDLE' });
-    expect(spySparkle).toHaveBeenCalled();
+    // Tension diastolic expansion surge (progress >= 0.42)
+    sound.update(0.016, { state: 'TENSION', progress: 0.5 });
+    expect(spyFinalBeat).toHaveBeenCalledTimes(1);
+
+    // Explosion onset
+    sound.update(0.016, { state: 'EXPLOSION', progress: 0.0 });
+    expect(spyExplosion).toHaveBeenCalledTimes(1);
+
+    // Later in explosion -> does not re-trigger
+    sound.update(0.016, { state: 'EXPLOSION', progress: 0.5 });
+    expect(spyExplosion).toHaveBeenCalledTimes(1);
+
+    // Quiet in post-explosion states
+    sound.update(0.016, { state: 'GEM_IDLE', progress: 0.5 });
+    sound.update(0.016, { state: 'LOVE_REVEAL', progress: 0.5 });
+    sound.update(0.016, { state: 'END', progress: 1.0 });
 
     sound.dispose();
   });

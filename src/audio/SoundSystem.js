@@ -1,16 +1,13 @@
 /**
- * SoundSystem - Romantic, cinematic Web Audio synthesizer & sound director.
+ * SoundSystem - Minimalist, organic, cinematic biological sound director.
  *
- * Implements 100% procedural synthesis with zero external asset dependencies:
- * - Celestial ambient pad
- * - Intro click chime
- * - 2.0s horizontal curtain split whoosh
- * - Synchronized cardiac heartbeat (lub-dub) tracking HeartSystem phase & acceleration
- * - Soft cinematic bass impact & petal burst whoosh (non-bomb)
- * - Gem idle starlight micro-sparkles
- * - Crystal/quartz chime upon gem click
- * - Emotional major-9th chord swell for "I love you!" reveal
- * - Master dynamic compression & smooth mute/unmute fading with localStorage persistence
+ * Focuses exclusively on natural acoustic heartbeat and soft climax release:
+ * 1. Natural organic heartbeat (Lub-Dub) with authentic tissue resonance and zero electronic/synth artifacts.
+ * 2. Synchronized acceleration: slow -> faster -> rapid -> final strong beat.
+ * 3. Final heartbeat impact right before explosion.
+ * 4. Very soft, quiet low-frequency whoosh/breath on explosion (strictly non-bomb).
+ *
+ * Excludes all synthetic chimes, sparkles, pads, hums, and UI clicks for a clean, mature experience.
  */
 
 const STORAGE_MUTE_KEY = 'galaxy_heart_muted';
@@ -34,27 +31,26 @@ export class SoundSystem {
     this.ctx = null;
     this.masterGain = null;
     this.compressor = null;
-    this.ambienceGain = null;
-    this.ambienceOscs = [];
-    this.ambienceFilter = null;
 
     this.unlocked = false;
     this.muted = false;
-    this.masterVolume = options.volume ?? 0.55;
+    this.masterVolume = options.volume ?? 0.50;
 
-    // Heartbeat synchronization state
+    // Heartbeat pre-rendered acoustic buffers
+    this.lubBuffer = null;
+    this.dubBuffer = null;
+    this.finalBeatBuffer = null;
+    this.softBurstBuffer = null;
+
+    // Heartbeat tracking
     this.lastHeartbeatPhase = -1;
     this.lubTriggered = false;
     this.dubTriggered = false;
-    this.tensionBeatCount = 0;
-    this.lastTensionTime = 0;
+    this.finalBeatTriggered = false;
+    this.explosionTriggered = false;
 
-    // Sparkle timer for GEM_IDLE
-    this.sparkleTimer = 0;
-    this.nextSparkleDelay = 1.6;
-
-    // State tracking
-    this.currentState = 'BOOT';
+    // Active nodes tracking to prevent overlap
+    this.activeSources = new Set();
 
     // Load mute preference
     if (this.storage) {
@@ -77,16 +73,16 @@ export class SoundSystem {
     try {
       this.ctx = new this.audioContextClass();
 
-      // Master Dynamics Compressor: prevents any clipping or overlap distortion
+      // Master Compressor to prevent any clipping or volume spikes
       this.compressor = this.ctx.createDynamicsCompressor();
       this.compressor.threshold.setValueAtTime(-18, this.ctx.currentTime);
       this.compressor.knee.setValueAtTime(12, this.ctx.currentTime);
       this.compressor.ratio.setValueAtTime(4, this.ctx.currentTime);
       this.compressor.attack.setValueAtTime(0.005, this.ctx.currentTime);
-      this.compressor.release.setValueAtTime(0.15, this.ctx.currentTime);
+      this.compressor.release.setValueAtTime(0.12, this.ctx.currentTime);
       this.compressor.connect(this.ctx.destination);
 
-      // Master Gain
+      // Master Gain Node with smooth transition
       this.masterGain = this.ctx.createGain();
       this.masterGain.gain.setValueAtTime(
         this.muted ? 0 : this.masterVolume,
@@ -94,10 +90,155 @@ export class SoundSystem {
       );
       this.masterGain.connect(this.compressor);
 
+      // Pre-render acoustic buffers
+      this.buildAcousticBuffers();
+
       return this.ctx;
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Generates organic acoustic waveforms modeled after biological cardiac valve closures.
+   * Uses smooth windowing to guarantee 0 clicks, 0 pops, and 0 electronic harshness.
+   */
+  buildAcousticBuffers() {
+    if (!this.ctx || typeof this.ctx.createBuffer !== 'function') return;
+
+    const sampleRate = this.ctx.sampleRate || 44100;
+
+    // 1. Primary Beat (Lub - S1): Muffled, deep, warm myocardial closure
+    // Settles naturally from ~48Hz to ~40Hz with soft tissue resonance
+    this.lubBuffer = this.renderCardiacBuffer({
+      sampleRate,
+      duration: 0.16,
+      startFreq: 48,
+      endFreq: 40,
+      attackTime: 0.022,
+      decayTau: 0.038,
+      bodyRatio: 0.18,
+      amplitude: 0.85,
+    });
+
+    // 2. Secondary Beat (Dub - S2): Slightly shorter, slightly higher valve snap
+    // Settles naturally from ~62Hz to ~54Hz
+    this.dubBuffer = this.renderCardiacBuffer({
+      sampleRate,
+      duration: 0.12,
+      startFreq: 62,
+      endFreq: 54,
+      attackTime: 0.018,
+      decayTau: 0.028,
+      bodyRatio: 0.14,
+      amplitude: 0.58,
+    });
+
+    // 3. Final Strong Beat: Deep, full, resonant diastolic surge before explosion
+    this.finalBeatBuffer = this.renderCardiacBuffer({
+      sampleRate,
+      duration: 0.22,
+      startFreq: 45,
+      endFreq: 36,
+      attackTime: 0.026,
+      decayTau: 0.052,
+      bodyRatio: 0.24,
+      amplitude: 1.05,
+    });
+
+    // 4. Soft Explosion Release: Very brief, quiet sub-bass exhale + whisper of air (non-bomb)
+    this.softBurstBuffer = this.renderSoftBurstBuffer(sampleRate, 0.55);
+  }
+
+  renderCardiacBuffer({
+    sampleRate,
+    duration,
+    startFreq,
+    endFreq,
+    attackTime,
+    decayTau,
+    bodyRatio,
+    amplitude,
+  }) {
+    const totalSamples = Math.floor(sampleRate * duration);
+    const buffer = this.ctx.createBuffer(1, totalSamples, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    let phaseAcc = 0;
+    for (let i = 0; i < totalSamples; i += 1) {
+      const t = i / sampleRate;
+      const progress = t / duration;
+
+      // Natural acoustic pitch settle
+      const freq = startFreq + (endFreq - startFreq) * Math.pow(progress, 0.7);
+      phaseAcc += (2 * Math.PI * freq) / sampleRate;
+
+      // Fundamental wave + gentle second harmonic tissue body
+      const fundamental = Math.sin(phaseAcc);
+      const tissueHarmonic = Math.sin(phaseAcc * 2.0 + 0.25) * bodyRatio;
+      const rawWave = fundamental + tissueHarmonic;
+
+      // Soft rounded attack (sinusoidal) and exponential biological decay
+      let env = 0;
+      if (t < attackTime) {
+        env = Math.sin((Math.PI * 0.5) * (t / attackTime));
+      } else {
+        env = Math.exp(-(t - attackTime) / decayTau);
+      }
+
+      // Smooth taper at tail to guarantee zero DC offset or click
+      const tailSamples = Math.floor(sampleRate * 0.015);
+      if (i > totalSamples - tailSamples) {
+        const tailP = (totalSamples - i) / tailSamples;
+        env *= tailP;
+      }
+
+      data[i] = rawWave * env * amplitude;
+    }
+
+    return buffer;
+  }
+
+  renderSoftBurstBuffer(sampleRate, duration) {
+    const totalSamples = Math.floor(sampleRate * duration);
+    const buffer = this.ctx.createBuffer(1, totalSamples, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    let phaseAcc = 0;
+    let pinkLast = 0.0;
+
+    for (let i = 0; i < totalSamples; i += 1) {
+      const t = i / sampleRate;
+      const progress = t / duration;
+
+      // 1. Soft warm sub exhale (52Hz down to 26Hz)
+      const freq = 52 - 26 * progress;
+      phaseAcc += (2 * Math.PI * freq) / sampleRate;
+      const subWave = Math.sin(phaseAcc);
+      const subEnv = t < 0.03
+        ? Math.sin((Math.PI * 0.5) * (t / 0.03))
+        : Math.exp(-(t - 0.03) / 0.14);
+
+      // 2. Gentle airy breath (soft pink noise filtered)
+      const white = Math.random() * 2 - 1;
+      pinkLast = (pinkLast + 0.025 * white) / 1.025;
+      const airEnv = t < 0.04
+        ? Math.sin((Math.PI * 0.5) * (t / 0.04))
+        : Math.exp(-(t - 0.04) / 0.18);
+
+      let sample = subWave * subEnv * 0.55 + pinkLast * airEnv * 0.20;
+
+      // Tail taper
+      const tailSamples = Math.floor(sampleRate * 0.02);
+      if (i > totalSamples - tailSamples) {
+        const tailP = (totalSamples - i) / tailSamples;
+        sample *= tailP;
+      }
+
+      data[i] = sample;
+    }
+
+    return buffer;
   }
 
   async unlock() {
@@ -112,7 +253,6 @@ export class SoundSystem {
       }
     }
     this.unlocked = true;
-    this.startAmbience();
   }
 
   isMuted() {
@@ -133,7 +273,7 @@ export class SoundSystem {
       const now = this.ctx.currentTime;
       const targetGain = this.muted ? 0 : this.masterVolume;
       this.masterGain.gain.cancelScheduledValues(now);
-      this.masterGain.gain.linearRampToValueAtTime(targetGain, now + 0.06);
+      this.masterGain.gain.linearRampToValueAtTime(targetGain, now + 0.04);
     }
   }
 
@@ -146,389 +286,118 @@ export class SoundSystem {
     return this.muted;
   }
 
-  // --------------------------------------------------------------------------
-  // 1. Ambient Background Pad (Warm, Ethereal, Romantic)
-  // --------------------------------------------------------------------------
-  startAmbience() {
-    if (!this.ctx || this.ambienceOscs.length > 0) return;
+  playBuffer(buffer, volume = 1.0) {
+    if (!this.ctx || !buffer || this.muted) return;
 
     const now = this.ctx.currentTime;
-    this.ambienceFilter = this.ctx.createBiquadFilter();
-    this.ambienceFilter.type = 'lowpass';
-    this.ambienceFilter.frequency.setValueAtTime(380, now);
-    this.ambienceFilter.Q.setValueAtTime(1.5, now);
-
-    this.ambienceGain = this.ctx.createGain();
-    this.ambienceGain.gain.setValueAtTime(0.001, now);
-    this.ambienceGain.gain.linearRampToValueAtTime(0.09, now + 2.5);
-
-    this.ambienceFilter.connect(this.ambienceGain);
-    this.ambienceGain.connect(this.masterGain);
-
-    // Warm celestial triad: A2 (110Hz), E3 (164.8Hz), C#4 (277.2Hz)
-    const freqs = [110.0, 164.81, 277.18];
-    this.ambienceOscs = freqs.map((freq, idx) => {
-      const osc = this.ctx.createOscillator();
-      osc.type = idx === 0 ? 'sine' : 'triangle';
-      osc.frequency.setValueAtTime(freq, now);
-      // Subtle detune for shimmer
-      osc.detune.setValueAtTime((idx - 1) * 4, now);
-      osc.connect(this.ambienceFilter);
-      osc.start(now);
-      return osc;
-    });
-  }
-
-  setAmbienceVolume(targetGain, rampDuration = 1.0) {
-    if (!this.ctx || !this.ambienceGain) return;
-    const now = this.ctx.currentTime;
-    this.ambienceGain.gain.cancelScheduledValues(now);
-    this.ambienceGain.gain.linearRampToValueAtTime(
-      Math.max(0.001, targetGain),
-      now + rampDuration,
-    );
-  }
-
-  // --------------------------------------------------------------------------
-  // 2. Intro Click Chime (Celesta / Music Box)
-  // --------------------------------------------------------------------------
-  playIntroClick() {
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-
-    // Sweet sparkling double chime: E6 (1318.5Hz) & B6 (1975.5Hz)
-    const tones = [1318.51, 1975.53];
-    tones.forEach((freq, i) => {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, now + i * 0.05);
-
-      gain.gain.setValueAtTime(0.0001, now + i * 0.05);
-      gain.gain.linearRampToValueAtTime(0.18, now + i * 0.05 + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.05 + 0.85);
-
-      osc.connect(gain);
-      gain.connect(this.masterGain);
-
-      osc.start(now + i * 0.05);
-      osc.stop(now + i * 0.05 + 0.9);
-    });
-  }
-
-  // --------------------------------------------------------------------------
-  // 3. Transition Whoosh (~2s horizontal curtain split)
-  // --------------------------------------------------------------------------
-  playCurtainWhoosh() {
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-    const duration = 2.0;
-
-    // Create 2-second stereo noise buffer
-    const bufferSize = Math.floor(this.ctx.sampleRate * duration);
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    let lastOut = 0.0;
-
-    // Soft pink noise algorithm
-    for (let i = 0; i < bufferSize; i += 1) {
-      const white = Math.random() * 2 - 1;
-      data[i] = (lastOut + 0.02 * white) / 1.02;
-      lastOut = data[i];
-      data[i] *= 3.5;
-    }
-
-    const noiseSource = this.ctx.createBufferSource();
-    noiseSource.buffer = buffer;
-
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.Q.setValueAtTime(1.8, now);
-    filter.frequency.setValueAtTime(320, now);
-    filter.frequency.exponentialRampToValueAtTime(1850, now + 0.85);
-    filter.frequency.exponentialRampToValueAtTime(450, now + duration);
+    const source = this.ctx.createBufferSource();
+    source.buffer = buffer;
 
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(0.16, now + 0.45);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    gain.gain.setValueAtTime(Math.max(0.001, volume), now);
 
-    noiseSource.connect(filter);
-    filter.connect(gain);
+    source.connect(gain);
     gain.connect(this.masterGain);
 
-    noiseSource.start(now);
-    noiseSource.stop(now + duration + 0.05);
+    this.activeSources.add(source);
+    source.onended = () => {
+      this.activeSources.delete(source);
+      try {
+        source.disconnect();
+        gain.disconnect();
+      } catch {
+        // Safe cleanup
+      }
+    };
+
+    source.start(now);
   }
 
   // --------------------------------------------------------------------------
-  // 4. Synchronized Cardiac Heartbeat (Lub-Dub)
+  // Biological Heartbeat Pulses (No electronic sound)
   // --------------------------------------------------------------------------
   playHeartbeat(intensity = 0.5, isRapid = false, isDub = false) {
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
+    const buffer = isDub ? this.dubBuffer : this.lubBuffer;
+    if (!buffer) return;
 
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const filter = this.ctx.createBiquadFilter();
+    // Subtle natural volume scaling with heartbeat intensity
+    const baseVol = isDub ? 0.40 : 0.55;
+    const volume = Math.min(0.75, baseVol + intensity * 0.12);
+    this.playBuffer(buffer, volume);
+  }
 
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(isRapid ? 120 : 95, now);
+  playFinalBeat() {
+    if (!this.finalBeatBuffer) return;
+    this.playBuffer(this.finalBeatBuffer, 0.85);
+  }
 
-    // Primary pulse (Lub): 50Hz -> 38Hz; Secondary pulse (Dub): 60Hz -> 42Hz
-    const baseFreq = isDub ? (isRapid ? 66 : 58) : isRapid ? 56 : 48;
-    const endFreq = isDub ? 42 : 36;
-    const duration = isDub ? 0.11 : 0.15;
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(baseFreq, now);
-    osc.frequency.exponentialRampToValueAtTime(endFreq, now + duration);
-
-    // Volume shaped by heartbeat intensity
-    const peakVolume = Math.min(0.38, 0.14 + intensity * 0.12) * (isDub ? 0.72 : 1.0);
-    gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(peakVolume, now + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + duration + 0.02);
+  playSoftExplosion() {
+    if (!this.softBurstBuffer) return;
+    this.playBuffer(this.softBurstBuffer, 0.45);
   }
 
   // --------------------------------------------------------------------------
-  // 5. Soft Cinematic Explosion (Warm sub-bass drop + Petal shimmer)
-  // --------------------------------------------------------------------------
-  playExplosion() {
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-
-    // 1. Warm Sub Bass Drop (No harsh clipping, smooth rounded cinematic thump)
-    const subOsc = this.ctx.createOscillator();
-    const subGain = this.ctx.createGain();
-    const subFilter = this.ctx.createBiquadFilter();
-
-    subFilter.type = 'lowpass';
-    subFilter.frequency.setValueAtTime(110, now);
-
-    subOsc.type = 'sine';
-    subOsc.frequency.setValueAtTime(75, now);
-    subOsc.frequency.exponentialRampToValueAtTime(28, now + 0.65);
-
-    subGain.gain.setValueAtTime(0.001, now);
-    subGain.gain.linearRampToValueAtTime(0.35, now + 0.035);
-    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
-
-    subOsc.connect(subFilter);
-    subFilter.connect(subGain);
-    subGain.connect(this.masterGain);
-
-    subOsc.start(now);
-    subOsc.stop(now + 1.0);
-
-    // 2. Petal Shimmer / Whispering Outward Burst (Silky filtered noise)
-    const shimmerDuration = 2.4;
-    const bufferSize = Math.floor(this.ctx.sampleRate * shimmerDuration);
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-
-    for (let i = 0; i < bufferSize; i += 1) {
-      data[i] = (Math.random() * 2 - 1) * 0.4;
-    }
-
-    const shimmerSource = this.ctx.createBufferSource();
-    shimmerSource.buffer = buffer;
-
-    const shimmerFilter = this.ctx.createBiquadFilter();
-    shimmerFilter.type = 'bandpass';
-    shimmerFilter.Q.setValueAtTime(2.2, now);
-    shimmerFilter.frequency.setValueAtTime(1200, now);
-    shimmerFilter.frequency.exponentialRampToValueAtTime(3200, now + 0.5);
-    shimmerFilter.frequency.exponentialRampToValueAtTime(600, now + shimmerDuration);
-
-    const shimmerGain = this.ctx.createGain();
-    shimmerGain.gain.setValueAtTime(0.001, now);
-    shimmerGain.gain.linearRampToValueAtTime(0.18, now + 0.12);
-    shimmerGain.gain.exponentialRampToValueAtTime(0.0001, now + shimmerDuration);
-
-    shimmerSource.connect(shimmerFilter);
-    shimmerFilter.connect(shimmerGain);
-    shimmerGain.connect(this.masterGain);
-
-    shimmerSource.start(now);
-    shimmerSource.stop(now + shimmerDuration + 0.05);
-
-    // Hush the ambience down to create serene quiet vacuum
-    this.setAmbienceVolume(0.018, 0.4);
-  }
-
-  // --------------------------------------------------------------------------
-  // 6. Gem Idle Micro-Sparkles (Delicate starlight glints)
-  // --------------------------------------------------------------------------
-  playGemSparkle() {
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-
-    // Pentatonic crystal tones: D6, F#6, A6, C#7
-    const crystalPitches = [1174.66, 1479.98, 1760.0, 2217.46];
-    const pitch = crystalPitches[Math.floor(Math.random() * crystalPitches.length)];
-
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(pitch, now);
-
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.linearRampToValueAtTime(0.055, now + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.38);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + 0.42);
-  }
-
-  // --------------------------------------------------------------------------
-  // 7. Crystal Gem Click Chime (Resonant Quartz Bell)
-  // --------------------------------------------------------------------------
-  playCrystalChime() {
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-
-    // Quartz crystal harmonics: Fundamental (1760Hz - A6) + 2.76x (4857Hz) + 5.4x (9504Hz)
-    const fundamental = 1760.0;
-    const partials = [
-      { ratio: 1.0, gain: 0.22, decay: 0.95 },
-      { ratio: 2.76, gain: 0.08, decay: 0.65 },
-      { ratio: 5.4, gain: 0.03, decay: 0.45 },
-    ];
-
-    partials.forEach((part) => {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(fundamental * part.ratio, now);
-
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.linearRampToValueAtTime(part.gain, now + 0.008);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + part.decay);
-
-      osc.connect(gain);
-      gain.connect(this.masterGain);
-
-      osc.start(now);
-      osc.stop(now + part.decay + 0.05);
-    });
-  }
-
-  // --------------------------------------------------------------------------
-  // 8. "I Love You!" Romantic Major 9th Chord Reveal
-  // --------------------------------------------------------------------------
-  playLoveReveal() {
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-
-    // Romantic Fmaj9 lush chord: F3 (174.6Hz), C4 (261.6Hz), A4 (440Hz), E5 (659.2Hz), G5 (784Hz)
-    const chord = [
-      { freq: 174.61, type: 'triangle', gain: 0.14, delay: 0.0 },
-      { freq: 261.63, type: 'sine', gain: 0.12, delay: 0.06 },
-      { freq: 440.0, type: 'sine', gain: 0.11, delay: 0.12 },
-      { freq: 659.25, type: 'sine', gain: 0.09, delay: 0.18 },
-      { freq: 783.99, type: 'sine', gain: 0.07, delay: 0.24 },
-    ];
-
-    chord.forEach((note) => {
-      const noteTime = now + note.delay;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-
-      osc.type = note.type;
-      osc.frequency.setValueAtTime(note.freq, noteTime);
-
-      gain.gain.setValueAtTime(0.0001, noteTime);
-      gain.gain.linearRampToValueAtTime(note.gain, noteTime + 0.45);
-      gain.gain.exponentialRampToValueAtTime(0.0001, noteTime + 3.2);
-
-      osc.connect(gain);
-      gain.connect(this.masterGain);
-
-      osc.start(noteTime);
-      osc.stop(noteTime + 3.3);
-    });
-
-    // Bloom ambience back up to warm, comforting afterglow
-    this.setAmbienceVolume(0.12, 2.0);
-  }
-
-  // --------------------------------------------------------------------------
-  // Timeline Frame Update
+  // Frame Update Loop - Sync directly with HeartSystem
   // --------------------------------------------------------------------------
   update(dt = 0.016, stateSnapshot = {}, heartSystem = null) {
     if (!this.ctx || !this.unlocked) return;
 
     const state = stateSnapshot?.state ?? 'BOOT';
     const progress = stateSnapshot?.progress ?? 0;
-    this.currentState = state;
 
-    // 1. Heartbeat Synchronization
+    // 1. Normal & Rapid Heartbeat
     if (state === 'HEARTBEAT' || state === 'RAPID_HEARTBEAT') {
       const isRapid = state === 'RAPID_HEARTBEAT';
       const phase = heartSystem?.phase ?? 0;
       const intensity = stateSnapshot?.heartbeatIntensity ?? 0.5;
 
-      // Detect phase crossing for Lub (~0.08) and Dub (~0.26)
+      // When phase wraps around from end to beginning
       if (phase < this.lastHeartbeatPhase) {
-        // Wrapped around to new beat cycle
         this.lubTriggered = false;
         this.dubTriggered = false;
       }
 
-      if (!this.lubTriggered && phase >= 0.07 && phase <= 0.22) {
+      // Lub triggers at the onset of primary contraction (~phase 0.06 - 0.14)
+      if (!this.lubTriggered && phase >= 0.06 && phase <= 0.20) {
         this.playHeartbeat(intensity, isRapid, false);
         this.lubTriggered = true;
       }
 
-      if (!this.dubTriggered && phase >= 0.25 && phase <= 0.45) {
+      // Dub triggers at the onset of secondary closure (~phase 0.24 - 0.36)
+      if (!this.dubTriggered && phase >= 0.24 && phase <= 0.42) {
         this.playHeartbeat(intensity, isRapid, true);
         this.dubTriggered = true;
       }
 
       this.lastHeartbeatPhase = phase;
+      this.finalBeatTriggered = false;
+      this.explosionTriggered = false;
     } else if (state === 'TENSION') {
-      // Rapid suspenseful tension crescendo
       this.lastHeartbeatPhase = -1;
-      this.lastTensionTime += dt;
-      const beatInterval = Math.max(0.16, 0.42 - progress * 0.25);
+      this.lubTriggered = false;
+      this.dubTriggered = false;
 
-      if (this.lastTensionTime >= beatInterval) {
-        this.lastTensionTime = 0;
-        this.tensionBeatCount += 1;
-        const tensionIntensity = 1.0 + progress * 0.8;
-        this.playHeartbeat(tensionIntensity, true, this.tensionBeatCount % 2 === 0);
+      // Final Strong Beat: triggers during diastolic expansion surge (progress >= 0.42)
+      if (!this.finalBeatTriggered && progress >= 0.42) {
+        this.playFinalBeat();
+        this.finalBeatTriggered = true;
+      }
+    } else if (state === 'EXPLOSION') {
+      this.lastHeartbeatPhase = -1;
+      this.lubTriggered = false;
+      this.dubTriggered = false;
+
+      // Soft release breath: triggers at the exact start of explosion
+      if (!this.explosionTriggered) {
+        this.playSoftExplosion();
+        this.explosionTriggered = true;
       }
     } else {
       this.lastHeartbeatPhase = -1;
       this.lubTriggered = false;
       this.dubTriggered = false;
-      this.lastTensionTime = 0;
-    }
-
-    // 2. Gem Idle Micro-Sparkles
-    if (state === 'GEM_IDLE') {
-      this.sparkleTimer += dt;
-      if (this.sparkleTimer >= this.nextSparkleDelay) {
-        this.sparkleTimer = 0;
-        this.nextSparkleDelay = 1.6 + Math.random() * 1.5;
-        this.playGemSparkle();
-      }
-    } else {
-      this.sparkleTimer = 0;
+      this.finalBeatTriggered = false;
+      this.explosionTriggered = false;
     }
   }
 
@@ -536,30 +405,27 @@ export class SoundSystem {
     this.lastHeartbeatPhase = -1;
     this.lubTriggered = false;
     this.dubTriggered = false;
-    this.tensionBeatCount = 0;
-    this.lastTensionTime = 0;
-    this.sparkleTimer = 0;
-    this.setAmbienceVolume(0.09, 1.0);
+    this.finalBeatTriggered = false;
+    this.explosionTriggered = false;
+
+    // Stop active sources on reset
+    this.activeSources.forEach((source) => {
+      try {
+        source.stop();
+      } catch {
+        // Safe ignore
+      }
+    });
+    this.activeSources.clear();
   }
 
   dispose() {
-    if (this.ambienceOscs.length > 0) {
-      this.ambienceOscs.forEach((osc) => {
-        try {
-          osc.stop();
-          osc.disconnect();
-        } catch {
-          // Ignore
-        }
-      });
-      this.ambienceOscs = [];
-    }
-
+    this.reset();
     if (this.ctx) {
       try {
         this.ctx.close();
       } catch {
-        // Ignore
+        // Safe ignore
       }
       this.ctx = null;
     }

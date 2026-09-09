@@ -1,30 +1,30 @@
 # Audio Assets & Sound Design Structure
 
-Hệ thống âm thanh của dự án mặc định sử dụng bộ tổng hợp âm thanh thủ tục (Procedural Sound Synthesizer) thông qua **Web Audio API** tích hợp sẵn trong [`SoundSystem.js`](file:///d:/_CODE_BANK/Project_/03_Funny/galaxy-heart/src/audio/SoundSystem.js).
+Hệ thống âm thanh của dự án tập trung tối giản, thuần khiết và cinematic, với trọng tâm duy nhất là **nhịp đập trái tim tự nhiên (biological heartbeat)** và **khoảnh khắc nổ cánh hoa êm dịu**, loại bỏ hoàn toàn các tạp âm điện tử hoặc hiệu ứng thừa.
 
-Điều này giúp trải nghiệm tải tức thì 0ms, không phụ thuộc file mạng, không bị lỗi 404 và đồng bộ tuyệt đối từng frame với nhịp đập tim và vật lý nổ cánh hoa.
+Mặc định sử dụng bộ tổng hợp âm thanh thủ tục (Procedural Sound Synthesizer) thông qua **Web Audio API** tích hợp sẵn trong [`SoundSystem.js`](file:///d:/_CODE_BANK/Project_/03_Funny/galaxy-heart/src/audio/SoundSystem.js).
 
 ---
 
-## Danh sách Cues âm thanh (Audio Cue Manifest)
+## Danh sách Cues âm thanh (Minimalist Manifest)
 
-Nếu bạn muốn thay thế các hiệu ứng âm thanh procedural bằng các file âm thanh thu sẵn (mp3/wav/ogg), bạn có thể đặt các file tương ứng vào thư mục này:
+Nếu bạn muốn sử dụng các file âm thanh thu âm thực tế (mp3/wav) thay cho bộ tổng hợp, bạn có thể đặt các file tương ứng vào thư mục này:
 
 | File Name | Mô tả | Thời điểm phát | Gợi ý âm sắc |
 | :--- | :--- | :--- | :--- |
-| `intro-ambience.mp3` | Nhạc nền mộng mơ | Màn hình Intro | Celestial warm pad, âm lượng rất nhỏ (whisper) |
-| `intro-chime.mp3` | Tiếng chuông bấm nút | Khi click "Mở cửa trái tim" | Celesta, music box tinh tế |
-| `curtain-whoosh.mp3` | Tiếng lướt rèm kéo ngang | Lúc rèm tách đôi (2.0s) | Deep airy stereo whoosh, mượt mà |
-| `heartbeat-lub.mp3` | Nhịp tim đầu (tâm thu) | Đồng bộ animation tim đập | Low bass thump (50Hz), mềm, ấm |
-| `heartbeat-dub.mp3` | Nhịp tim thứ hai (tâm trương) | Tiếp nối nhịp đầu trong chu kỳ | Low-mid soft thump (60Hz) |
-| `explosion-soft.mp3` | Bass hit mềm + petal burst | Khi tim nổ bung cánh | Sub drop ấm (75Hz -> 30Hz) + shimmer xào xạc hoa, không bom |
-| `gem-sparkle.mp3` | Ánh sao lấp lánh quanh gem | Trong giai đoạn `GEM_IDLE` | Micro-bell, crystal glint rất nhỏ |
-| `crystal-chime.mp3` | Tiếng chuông ngọc pha lê | Khi click vào viên ngọc | Clean quartz crystal resonance, trong trẻo |
-| `love-reveal.mp3` | Hợp âm tình yêu | Khi hiện chữ "I love you!" | Lush romantic Major 9th chord swell |
+| `heartbeat-lub.wav` | Tiếng nhịp tim chính ($S_1$) | Nhịp co bóp tâm thu của tim | Trầm ấm, tự nhiên (45Hz - 48Hz), mềm mại, không click/pop |
+| `heartbeat-dub.wav` | Tiếng nhịp tim phụ ($S_2$) | Nhịp đóng van tâm trương | Ngắn hơn một chút, âm lượng ~60% của Lub |
+| `heartbeat-final.wav` | Cú đập tim quyết định | Giai đoạn `TENSION` trước khi nổ | Dày, vang, cảm xúc, kết nối trực tiếp vào cú bung cánh hoa |
+| `explosion-soft.wav` | Hơi thở nổ cánh hoa | Khi tim bung toả | Âm thanh thở nhẹ của cánh hoa (low breath / soft whoosh), tuyệt đối không dùng tiếng bom |
 
 ---
 
-## Lưu ý kỹ thuật
-- Các trình duyệt hiện đại (Chrome, Safari, iOS, Android) chặn Autoplay audio nếu người dùng chưa tương tác với trang.
-- Nút **“Mở cửa trái tim”** được dùng làm cử chỉ mở khoá AudioContext (`AudioContext.resume()`).
-- Nút bật/tắt âm thanh (Mute/Unmute) trên góc màn hình cho phép người dùng kiểm soát âm lượng bất kỳ lúc nào và tự động ghi nhớ tùy chọn vào `localStorage`.
+## Nguyên tắc thiết kế âm thanh
+1. **Trọng tâm duy nhất là Heartbeat**:
+   - Nhịp tim đập tự nhiên, trầm, mềm, biological.
+   - Nhịp tăng dần theo đúng dòng thời gian animation: chậm $\rightarrow$ nhanh dần $\rightarrow$ dồn dập $\rightarrow$ nhịp đập cuối cùng $\rightarrow$ bung cánh hoa.
+2. **Không tạp âm điện tử**:
+   - Loại bỏ hoàn toàn tiếng bíp, chimes, tiếng rù rè, synth pads, tiếng click nút bấm và hiệu ứng giả.
+   - Không chồng chéo nhiều lớp âm thanh gây ồn.
+3. **Mute/Unmute**:
+   - Nút loa nhỏ ở góc trên bên phải màn hình cho phép người dùng bật/tắt bất kỳ lúc nào và tự động nhớ lựa chọn vào `localStorage`.

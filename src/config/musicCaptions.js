@@ -63,11 +63,12 @@ export const WORD_TIMELINE = [
 // Durations in seconds. A word's default life is 0.15 + 1.15 + 0.45 = 1.75 s.
 // Outgoing words fade away by the next line's first timestamp to avoid overlapping lines.
 export const WORD_ANIMATION = Object.freeze({
-  fadeIn: 0.15,
+  fadeIn: 0.18,
   holdDuration: 1.15,
   fadeOut: 0.45,
   lineFadeOut: 0.22,
-  enterScale: 0.92,
-  exitY: -6,
-  exitBlur: 1.2,
+  enterScale: 0.88,
+  exitScale: 0.97,
+  exitY: -8,
+  exitBlur: 1.5,
 });

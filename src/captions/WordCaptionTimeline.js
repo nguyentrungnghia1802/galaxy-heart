@@ -15,7 +15,8 @@ export class WordCaptionTimeline {
     }
     if (!Number.isFinite(a.holdDuration) || a.holdDuration < 0 ||
         !Number.isFinite(a.enterScale) || a.enterScale <= 0 || a.enterScale > 1 ||
-        !Number.isFinite(a.exitY) || !Number.isFinite(a.exitBlur) || a.exitBlur < 0) {
+        !Number.isFinite(a.exitY) || !Number.isFinite(a.exitBlur) || a.exitBlur < 0 ||
+        (a.exitScale !== undefined && (!Number.isFinite(a.exitScale) || a.exitScale <= 0 || a.exitScale > 1))) {
       throw new Error('Invalid word animation settings.');
     }
     this.lines = [];
@@ -48,6 +49,8 @@ export class WordCaptionTimeline {
     target.scale = a.enterScale;
     target.y = 0;
     target.blur = 0;
+    target.enter = 0;
+    target.exit = 0;
     if (!word || !Number.isFinite(time) || time < word.time) return target;
     const exitStart = word.time + a.fadeIn + (word.hold ?? a.holdDuration);
     const end = Math.min(exitStart + a.fadeOut, word.group.end);
@@ -62,6 +65,8 @@ export class WordCaptionTimeline {
     target.scale = a.enterScale + (1 - a.enterScale) * enter;
     target.y = a.exitY * exit;
     target.blur = a.exitBlur * exit;
+    target.enter = enter;
+    target.exit = exit;
     return target;
   }
 

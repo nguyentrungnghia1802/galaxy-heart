@@ -489,45 +489,84 @@ canvas {
 
 
 
-/* HTML captions remain outside Three.js tone mapping and bloom. */
+/* HTML captions remain outside Three.js tone mapping and bloomPass. */
 .music-captions {
   position: fixed;
   inset: 0;
   z-index: 4;
   display: grid;
   place-items: center;
-  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
   pointer-events: none;
+  perspective: 1000px;
+  perspective-origin: 50% 50%;
 }
 .music-caption {
   grid-area: 1 / 1;
-  width: min(100%, 42rem);
+  width: min(92vw, 44rem);
   margin: 0;
-  color: #f6e8e5;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(18px, 2.2vw, 28px);
-  font-weight: 400;
-  line-height: 1.65;
-  letter-spacing: 0.025em;
+  color: #faf0ec;
+  font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: clamp(22px, 3.2vw, 34px);
+  font-weight: 500;
+  line-height: 1.7;
+  letter-spacing: 0.035em;
   text-align: center;
   text-wrap: balance;
   overflow-wrap: anywhere;
   white-space: pre-line;
-  text-shadow: 0 2px 8px rgba(16, 3, 8, 0.75);
   opacity: 0;
+  transform-style: preserve-3d;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 .music-caption--words {
   opacity: 1;
-  text-shadow: none;
-  color: #ddc8cb;
+  color: #faf0ec;
+  transform-style: preserve-3d;
 }
 .music-caption__word {
   display: inline-block;
-  margin-inline: 0.12em;
+  margin-inline: 0.14em;
   opacity: 0;
   visibility: hidden;
-  transform-origin: center;
+  transform-origin: 50% 60%;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, opacity, filter;
+  /* 3D Physical Sculptural Shading (Zero Glow / Zero Bloom / Matte Ivory-Rose Depth) */
+  color: #fbf2ee;
+  text-shadow:
+    0 -1px 0.5px rgba(255, 255, 255, 0.35),
+    0 1px 1px rgba(28, 4, 12, 0.95),
+    0 2px 2px rgba(18, 2, 8, 0.85),
+    0 3px 4px rgba(12, 1, 5, 0.75),
+    0 6px 12px rgba(0, 0, 0, 0.65),
+    0 12px 24px rgba(0, 0, 0, 0.5);
   /* Only media-time samples animate these properties; no independent CSS clock. */
+}
+@media (max-width: 600px) {
+  .music-caption {
+    width: min(94vw, 36rem);
+    font-size: clamp(20px, 5.2vw, 26px);
+    line-height: 1.6;
+    letter-spacing: 0.025em;
+  }
+  .music-caption__word {
+    margin-inline: 0.1em;
+    text-shadow:
+      0 -1px 0.5px rgba(255, 255, 255, 0.3),
+      0 1px 1px rgba(28, 4, 12, 0.95),
+      0 2px 2px rgba(18, 2, 8, 0.8),
+      0 4px 8px rgba(0, 0, 0, 0.7);
+  }
+}
+@media (max-width: 400px) {
+  .music-caption {
+    font-size: clamp(18px, 4.8vw, 22px);
+    line-height: 1.55;
+  }
 }
 .caption-debug {
   position: fixed;

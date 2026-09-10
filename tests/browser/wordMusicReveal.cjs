@@ -114,7 +114,7 @@ const fs = require('node:fs');
       if (isDev) assert(await page.evaluate(() => {
         const a = window.__PETAL_HEART_APP__;
         a.onGemInteracted(); a.replay();
-        return a.stateMachine.state === 'FINAL' && a.scene === qaScene && a.petalSystem.mesh === qaMesh && !a.gemSystem.outerMesh.visible && a.musicSystem.volume === 0.7;
+        return a.stateMachine.state === 'FINAL' && a.scene === qaScene && a.petalSystem.mesh === qaMesh && !a.gemSystem.outerMesh.visible && a.musicSystem.volume === 0.49;
       }));
       const duration = await page.evaluate(() => qaAudio.duration);
       assert.deepEqual(errors, []);

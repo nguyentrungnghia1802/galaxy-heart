@@ -8,7 +8,7 @@ import {
 const MUSIC_SRC = `${import.meta.env.BASE_URL}assets/audio/heart.mp3`;
 
 export const MUSIC_REVEAL_CONFIG = Object.freeze({
-  music: Object.freeze({ src: MUSIC_SRC, startTime: 0, endTime: 24.25, volume: 0.7 }),
+  music: Object.freeze({ src: MUSIC_SRC, startTime: 0, endTime: 24.25, volume: 0.49 }),
   captions: CAPTION_TIMELINE,
   captionAnimation: CAPTION_ANIMATION,
   words: WORD_TIMELINE,

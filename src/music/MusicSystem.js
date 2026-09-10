@@ -6,7 +6,7 @@ const clampVolume = value => Math.max(0, Math.min(1, Number.isFinite(value) ? va
  */
 export class MusicSystem {
   constructor(config = {}, { createAudio = () => new Audio(), getContext = () => null } = {}) {
-    this.config = { src: '', startTime: 0, endTime: null, volume: 0.7, ...config };
+    this.config = { src: '', startTime: 0, endTime: null, volume: 0.49, ...config };
     const { startTime, endTime } = this.config;
     if (!Number.isFinite(startTime) || startTime < 0 || (endTime !== null && (!Number.isFinite(endTime) || endTime <= startTime))) {
       throw new Error('Music requires 0 <= startTime < endTime (or endTime: null).');

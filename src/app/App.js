@@ -367,7 +367,7 @@ export class App {
     }
 
     const currentTime = this.musicSystem.currentTime;
-    const baseVolume = this.musicConfig.music?.volume ?? 0.7;
+    const baseVolume = this.musicConfig.music?.volume ?? 0.49;
     const musicEnd = this.endingConfig.musicEnd ?? 24.25;
     const captionEnd = this.endingConfig.captionEnd ?? 23.95;
     const fadeDuration = this.endingConfig.fadeDuration ?? 3.65;

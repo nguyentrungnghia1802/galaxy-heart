@@ -60,7 +60,7 @@ function createTestApp(options = {}) {
   replayButton.hidden = true;
   const fakeAudio = new FakeAudio();
   const musicSystem = new MusicSystem(
-    { src: 'test.mp3', volume: 0.7, endTime: 24.25 },
+    { src: 'test.mp3', volume: 0.49, endTime: 24.25 },
     { createAudio: () => fakeAudio }
   );
   const windowTarget = {
@@ -86,7 +86,7 @@ function createTestApp(options = {}) {
     cancelFrame: vi.fn(),
     musicConfig: {
       ...MUSIC_REVEAL_CONFIG,
-      music: { src: 'test.mp3', volume: 0.7, endTime: 24.25 },
+      music: { src: 'test.mp3', volume: 0.49, endTime: 24.25 },
       ending: {
         fadeDuration: 3.65,
         captionEnd: 23.95,
@@ -170,8 +170,8 @@ describe('Ending Sequence & Cinematic Blackout', () => {
     app.updateEndingSequence();
     expect(spyFadeTo).toHaveBeenCalled();
     const midVol = spyFadeTo.mock.calls.at(-1)[0];
-    expect(midVol).toBeLessThan(0.7);
-    expect(midVol).toBeGreaterThan(0.3);
+    expect(midVol).toBeLessThan(0.49);
+    expect(midVol).toBeGreaterThan(0.2);
 
     // At t = 24.0s (near end)
     fakeAudio.currentTime = 24.0;

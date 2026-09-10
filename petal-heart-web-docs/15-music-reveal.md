@@ -19,7 +19,7 @@ Open `?captionDebug=1` (or append `&captionDebug=1`) for a small clock, current 
 
 ## Music and audio routing
 
-`src/config/musicReveal.js` selects the track with `${import.meta.env.BASE_URL}assets/audio/heart.mp3`, plays from zero to natural end (~26.26 s), and keeps music volume at 0.7. The relative default base and `/galaxy-heart/` Pages base are both supported. Do not substitute a Windows path or a root-relative asset URL.
+`src/config/musicReveal.js` selects the track with `${import.meta.env.BASE_URL}assets/audio/heart.mp3`, plays from zero to natural end (~26.26 s), and keeps music volume at 0.49 (70% of baseline 0.7). The relative default base and `/galaxy-heart/` Pages base are both supported. Do not substitute a Windows path or a root-relative asset URL.
 
 `SoundSystem` owns one AudioContext. Heartbeat gain is 1.6 with its own compressor; the explosion retains gain 1 and its original compressor settings. `MusicSystem.musicGain` connects separately to the same destination, independent of both buses. There is no master boost.
 

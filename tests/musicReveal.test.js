@@ -44,5 +44,24 @@ describe('music reveal flow', () => {
     expect(MUSIC_REVEAL_CONFIG.ending.musicEnd).toBe(24.25);
     expect(MUSIC_REVEAL_CONFIG.ending.fadeDuration).toBe(3.65);
   });
+
+  it('runs automated sequence: GEM_IDLE for 1.0s, then GEM_ACTIVATION, then MUSIC_REVEAL without clicks', () => {
+    const machine = new StateMachine();
+    machine.start();
+    machine.transitionTo('GEM_IDLE');
+    expect(machine.state).toBe('GEM_IDLE');
+
+    // Floats for 1.0 second without clicking
+    machine.update(0.99);
+    expect(machine.state).toBe('GEM_IDLE');
+
+    // After 1.0 second, automatically activates (heart stream & gem fade)
+    machine.update(0.02);
+    expect(machine.state).toBe('GEM_ACTIVATION');
+
+    // After activation duration, automatically starts music reveal
+    machine.update(MUSIC_REVEAL_CONFIG.activation.duration + 0.01);
+    expect(machine.state).toBe('MUSIC_REVEAL');
+  });
 });
 

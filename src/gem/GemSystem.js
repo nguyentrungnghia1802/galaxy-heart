@@ -264,11 +264,8 @@ export class GemSystem {
     this.outerMesh.visible = true;
     this.haloMesh.visible = false;
     this.orbitPoints.visible = true;
-    this.hitMesh.visible = state === 'GEM_IDLE';
-
-    // 1. Smooth hover transition (fast in, smooth out)
-    const targetHover = this.isHovered ? 1.0 : 0.0;
-    this.hoverFactor += (targetHover - this.hoverFactor) * Math.min(1, dt * 10);
+    this.hitMesh.visible = false;
+    this.hoverFactor = 0;
 
     // 2. Levitation & Floating Rotation
     const floatSpeed = isExploded ? 1.6 : 1.0;
@@ -306,24 +303,11 @@ export class GemSystem {
     this.gemLight.intensity =
       (0.25 + this.hoverFactor * 0.15 + this.burstFlash * 0.6) * disappearAlpha;
 
-    // Halo kept inactive
+    // Halo and ripple kept inactive (no interaction cues)
     this.haloMesh.visible = false;
     this.haloMat.opacity = 0;
-
-    // 5. Beckoning Ripple Cue (Only during GEM_IDLE when user needs to tap, subtle and soft)
-    if (state === 'GEM_IDLE') {
-      this.idleTime += dt;
-      this.interactionHintVisible = this.idleTime >= this.hintDelay;
-      const ripplePeriod = 2.4;
-      const ripplePhase = (Math.max(0, this.idleTime - this.hintDelay) % ripplePeriod) / ripplePeriod;
-      const rippleScale = lerp(0.8, 1.8, Math.pow(ripplePhase, 0.5));
-      this.rippleMesh.scale.set(rippleScale, rippleScale, rippleScale);
-      this.rippleMat.opacity = Math.sin(ripplePhase * Math.PI) * 0.12;
-      this.rippleMesh.visible = this.interactionHintVisible;
-    } else {
-      this.interactionHintVisible = false;
-      this.rippleMesh.visible = false;
-    }
+    this.interactionHintVisible = false;
+    this.rippleMesh.visible = false;
 
     // 6. Orbiting Firefly Sparkles (6 tiny particles)
     const sparkleSpeedMult = 1.0 + this.hoverFactor * 1.2;

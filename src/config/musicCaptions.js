@@ -17,14 +17,14 @@ export const CAPTION_TIMELINE = [
   { time: 5.14, text: 'I love you', section: 2 },
   { time: 6.20, text: 'oh~', section: 2, hold: 0.85 },
   { time: 7.50, text: 'I love you so much', section: 2 },
-  { time: 9.90, text: 'Forever', section: 2, hold: 0.85 },
-  { time: 11.20, text: 'you and I', section: 2 },
+  { time: 9.00, text: 'Forever', section: 2, hold: 0.85 },
+  { time: 9.30, text: 'you and I', section: 2 },
 
   // ==========================================
   // SECTION 3 (~11.94s – 17.10s)
   // ==========================================
-  { time: 11.94, text: 'My baby', section: 3 },
-  { time: 13.05, text: 'I love you so much', section: 3 },
+  { time: 11.50, text: 'My baby', section: 3 },
+  { time: 12.55, text: 'I love you so much', section: 3 },
   { time: 15.00, text: 'Forever', section: 3, hold: 0.75 },
   { time: 16.15, text: 'you and I', section: 3 },
 

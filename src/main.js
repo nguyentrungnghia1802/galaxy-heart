@@ -91,6 +91,7 @@ if (!isWebGLAvailable()) {
       // Unlock AudioContext and ensure audio is active on user click
       app.soundSystem?.setMuted(false);
       app.soundSystem?.unlock();
+      app.musicSystem?.arm();
 
       // 1. Intro screen freezes completely for ~1 second
       introScreenEl.classList.add('is-frozen');

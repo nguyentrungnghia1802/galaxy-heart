@@ -44,28 +44,25 @@ describe('GemSystem', () => {
     gem.dispose();
   });
 
-  it('modulates hover factor and enhances emissive intensity on hover', () => {
+  it('remains non-interactive and keeps hover factor at 0 without hover states', () => {
     const gem = new GemSystem();
     const initialEmissive = gem.outerMat.emissiveIntensity;
 
     gem.setHovered(true);
     gem.update(0.1, { state: 'GEM_IDLE' });
 
-    expect(gem.hoverFactor).toBeGreaterThan(0);
-    expect(gem.outerMat.emissiveIntensity).toBeGreaterThan(initialEmissive);
-
-    gem.setHovered(false);
-    gem.update(0.5, { state: 'GEM_IDLE' });
-    expect(gem.hoverFactor).toBeLessThan(0.1);
+    expect(gem.hoverFactor).toBe(0);
+    expect(gem.outerMat.emissiveIntensity).toBe(initialEmissive);
+    expect(gem.hitMesh.visible).toBe(false);
 
     gem.dispose();
   });
 
-  it('triggers burst flash and beckoning ripple during GEM_IDLE', () => {
+  it('triggers burst flash while keeping ripple cue and hint disabled', () => {
     const gem = new GemSystem();
 
     gem.update(3.5, { state: 'GEM_IDLE' });
-    expect(gem.rippleMesh.visible).toBe(true);
+    expect(gem.rippleMesh.visible).toBe(false);
 
     gem.triggerBurst();
     expect(gem.burstFlash).toBe(1.0);
@@ -81,16 +78,16 @@ describe('GemSystem', () => {
     gem.dispose();
   });
 
-  it('waits three idle seconds before exposing the interaction hint', () => {
+  it('keeps interaction hint and ripple completely disabled during GEM_IDLE', () => {
     const gem = new GemSystem({ hintDelay: 3 });
 
     gem.update(2.999, { state: 'GEM_IDLE' });
     expect(gem.interactionHintVisible).toBe(false);
     expect(gem.rippleMesh.visible).toBe(false);
 
-    gem.update(0.001, { state: 'GEM_IDLE' });
-    expect(gem.interactionHintVisible).toBe(true);
-    expect(gem.rippleMesh.visible).toBe(true);
+    gem.update(1.000, { state: 'GEM_IDLE' });
+    expect(gem.interactionHintVisible).toBe(false);
+    expect(gem.rippleMesh.visible).toBe(false);
 
     gem.update(0.016, { state: 'GEM_ACTIVATION', progress: 0.01 });
     expect(gem.interactionHintVisible).toBe(false);

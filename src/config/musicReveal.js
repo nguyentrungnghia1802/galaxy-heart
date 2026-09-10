@@ -13,7 +13,7 @@ export const MUSIC_REVEAL_CONFIG = Object.freeze({
   captionAnimation: CAPTION_ANIMATION,
   words: WORD_TIMELINE,
   wordAnimation: WORD_ANIMATION,
-  activation: Object.freeze({ duration: 1.2, pulseFraction: 0.22, pulseScale: 0.035 }),
+  activation: Object.freeze({ duration: 0.8, pulseFraction: 0.22, pulseScale: 0.035 }),
   gemHint: Object.freeze({ delay: 3 }),
   ending: Object.freeze({
     fadeDuration: 3.65,

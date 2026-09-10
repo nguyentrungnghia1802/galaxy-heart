@@ -1,6 +1,6 @@
 # Music Reveal: configuration and QA
 
-The flow is explosion → floating gem → click/tap → gem activation → music and word captions → FINAL. The old 3D love text and gem sound are not used. Existing petals keep drifting, with the same scene and meshes.
+The flow is explosion → floating gem (1s) → hearts burst + gem dissolves → music and phrase captions → ending blackout → FINAL. The sequence is completely automated without requiring user interaction on the gem.
 
 ## Adjust timestamps
 
@@ -23,9 +23,7 @@ Open `?captionDebug=1` (or append `&captionDebug=1`) for a small clock, current 
 
 `SoundSystem` owns one AudioContext. Heartbeat gain is 1.6 with its own compressor; the explosion retains gain 1 and its original compressor settings. `MusicSystem.musicGain` connects separately to the same destination, independent of both buses. There is no master boost.
 
-One audio element preloads at App construction. A gem gesture primes it through zero gain; activation completion starts audible playback. Repeated taps cannot start another sequence. Autoplay denial exposes the existing Continue music button. Hidden tabs pause rendering and music, then resume from the same media position. Natural audio end enters FINAL; replay cannot restart the activated sequence.
-
-The gem hint and surrounding ripple wait three idle seconds. An early click prevents them; activation dismisses the HTML hint without a fade-out delay.
+One audio element preloads at App construction. Clicking "Mở cửa trái tim" primes it through zero gain; after heart explosion, gem floats for 1 second before automatically triggering rising hearts, dissolving, and starting music and captions seamlessly. Autoplay denial exposes the existing Continue music button. Hidden tabs pause rendering and music, then resume from the same media position. Natural audio end enters FINAL; replay cannot restart the activated sequence.
 
 ## Run QA
 

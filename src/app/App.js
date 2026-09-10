@@ -119,11 +119,7 @@ export class App {
     this.captionRenderer = options.captionRenderer ?? new CaptionRenderer(
       container, { ...this.musicConfig, debug: options.captionDebug ?? false }, this.documentTarget,
     );
-    this.gemHint = options.gemHint ?? new GemInteractionHint(
-      container,
-      this.musicConfig.gemHint ?? {},
-      this.documentTarget,
-    );
+    this.gemHint = options.gemHint ?? null;
     this.sequenceActivated = false;
     this.resumeMusic = false;
     this.musicResumeButton = this.documentTarget?.createElement?.('button');
@@ -197,10 +193,6 @@ export class App {
     const nx = (event.clientX / width) * 2 - 1;
     const ny = (event.clientY / height) * 2 - 1;
     this.cameraSystem?.onPointer(nx, ny);
-
-    this.mouseNDC.x = nx;
-    this.mouseNDC.y = -ny;
-    this.updateGemHover();
   }
 
   handleTouchMove(event) {
@@ -211,55 +203,18 @@ export class App {
     const nx = (touch.clientX / width) * 2 - 1;
     const ny = (touch.clientY / height) * 2 - 1;
     this.cameraSystem?.onPointer(nx, ny);
-
-    this.mouseNDC.x = nx;
-    this.mouseNDC.y = -ny;
-    this.updateGemHover();
   }
 
-  updateGemHover() {
-    if (!this.gemSystem?.hitMesh || !this.camera) return;
-    this.raycaster.setFromCamera(this.mouseNDC, this.camera);
-    const intersects = this.raycaster.intersectObject(this.gemSystem.hitMesh, false);
-    const isHovered = this.stateMachine.state === 'GEM_IDLE' && intersects.length > 0;
-    this.gemSystem.setHovered(isHovered);
-
-    if (this.container?.style) {
-      this.container.style.cursor = isHovered ? 'pointer' : 'default';
-    }
-  }
-
-  handleClick(event) {
-    if (!this.gemSystem?.hitMesh || !this.camera) return;
-    let clientX = event.clientX;
-    let clientY = event.clientY;
-    if (typeof clientX !== 'number' && event.touches && event.touches.length > 0) {
-      clientX = event.touches[0].clientX;
-      clientY = event.touches[0].clientY;
-    }
-    if (typeof clientX === 'number') {
-      const width = this.container.clientWidth || this.windowTarget?.innerWidth || 1;
-      const height = this.container.clientHeight || this.windowTarget?.innerHeight || 1;
-      this.mouseNDC.x = (clientX / width) * 2 - 1;
-      this.mouseNDC.y = -(clientY / height) * 2 + 1;
-    }
-
-    this.raycaster.setFromCamera(this.mouseNDC, this.camera);
-    const intersects = this.raycaster.intersectObject(this.gemSystem.hitMesh, false);
-    if (intersects.length > 0) {
-      this.onGemInteracted();
-    }
+  handleClick() {
+    this.soundSystem?.unlock();
+    this.musicSystem?.arm();
   }
 
   onGemInteracted() {
-    if (this.stateMachine.state !== 'GEM_IDLE' || this.sequenceActivated) return;
-    this.sequenceActivated = true;
-    this.gemHint?.hide();
-    this.soundSystem.unlock();
-    this.musicSystem.arm();
-    this.gemSystem?.triggerHeartStream(this.camera);
-    this.stateMachine.triggerGemClick();
-    if (this.container.style) this.container.style.cursor = 'default';
+    if (this.stateMachine.state === 'GEM_IDLE') {
+      this.sequenceActivated = true;
+      this.stateMachine.transitionTo('GEM_ACTIVATION');
+    }
   }
 
   start() {
@@ -490,8 +445,8 @@ export class App {
     }
     if (state === 'GEM_ACTIVATION') {
       this.sequenceActivated = true;
-      this.gemHint?.hide();
-      this.gemSystem?.setHovered(false);
+      this.gemHint?.hide?.();
+      this.gemSystem?.triggerHeartStream(this.camera);
     }
     if (state === 'MUSIC_REVEAL') this.musicSystem.begin();
     if (state === 'FINAL') {

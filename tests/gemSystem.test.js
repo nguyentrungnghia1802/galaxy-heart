@@ -64,7 +64,7 @@ describe('GemSystem', () => {
   it('triggers burst flash and beckoning ripple during GEM_IDLE', () => {
     const gem = new GemSystem();
 
-    gem.update(0.5, { state: 'GEM_IDLE' });
+    gem.update(3.5, { state: 'GEM_IDLE' });
     expect(gem.rippleMesh.visible).toBe(true);
 
     gem.triggerBurst();
@@ -86,15 +86,19 @@ describe('GemSystem', () => {
 
     gem.update(2.999, { state: 'GEM_IDLE' });
     expect(gem.interactionHintVisible).toBe(false);
+    expect(gem.rippleMesh.visible).toBe(false);
 
     gem.update(0.001, { state: 'GEM_IDLE' });
     expect(gem.interactionHintVisible).toBe(true);
+    expect(gem.rippleMesh.visible).toBe(true);
 
     gem.update(0.016, { state: 'GEM_ACTIVATION', progress: 0.01 });
     expect(gem.interactionHintVisible).toBe(false);
+    expect(gem.rippleMesh.visible).toBe(false);
 
     gem.reset();
     expect(gem.interactionHintVisible).toBe(false);
+    expect(gem.rippleMesh.visible).toBe(false);
     gem.dispose();
   });
 

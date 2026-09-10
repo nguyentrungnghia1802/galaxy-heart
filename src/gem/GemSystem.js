@@ -304,11 +304,11 @@ export class GemSystem {
       this.idleTime += dt;
       this.interactionHintVisible = this.idleTime >= this.hintDelay;
       const ripplePeriod = 2.4;
-      const ripplePhase = (this.idleTime % ripplePeriod) / ripplePeriod;
+      const ripplePhase = (Math.max(0, this.idleTime - this.hintDelay) % ripplePeriod) / ripplePeriod;
       const rippleScale = lerp(0.8, 1.8, Math.pow(ripplePhase, 0.5));
       this.rippleMesh.scale.set(rippleScale, rippleScale, rippleScale);
       this.rippleMat.opacity = Math.sin(ripplePhase * Math.PI) * 0.12;
-      this.rippleMesh.visible = true;
+      this.rippleMesh.visible = this.interactionHintVisible;
     } else {
       this.interactionHintVisible = false;
       this.rippleMesh.visible = false;

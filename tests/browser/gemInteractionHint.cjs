@@ -9,7 +9,7 @@ try {
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-const url = 'http://127.0.0.1:5173/?skipIntro=true&jumpState=GEM_IDLE&quality=low&debugSpeed=3';
+const url = 'http://127.0.0.1:5173/?skipIntro=true&jumpState=GEM_IDLE&quality=low';
 
 async function gemPoint(page) {
   return page.evaluate(() => {
@@ -46,9 +46,9 @@ async function gemPoint(page) {
       console.log('is-visible confirmed!');
       assert.equal(await page.locator('.gem-interaction-hint').evaluate(node => node.getAttribute('aria-hidden')), 'false');
 
-      // Check desktop icon dimensions (38px wide)
+      // Check desktop icon dimensions (26px wide)
       const iconWidth = await page.locator('.gem-interaction-hint__icon').evaluate(node => Math.round(node.getBoundingClientRect().width));
-      assert.equal(iconWidth, 38, `Desktop icon width should be 38px, got ${iconWidth}`);
+      assert.equal(iconWidth, 26, `Desktop icon width should be 26px, got ${iconWidth}`);
 
       // Check micro-copy label
       const labelText = await page.locator('.gem-interaction-hint__label').evaluate(node => node.textContent.trim());
@@ -62,6 +62,7 @@ async function gemPoint(page) {
       await page.mouse.click(point.x, point.y);
       await page.waitForFunction(() => window.__PETAL_HEART_APP__.stateMachine.state === 'GEM_ACTIVATION');
       assert.equal(await page.locator('.gem-interaction-hint').evaluate(node => node.getAttribute('aria-hidden')), 'true');
+      assert.equal(await page.locator('.gem-interaction-hint').evaluate(node => getComputedStyle(node).transitionDuration), '0s');
       assert.deepEqual(errors, []);
       report.push({ viewport: 'desktop', result: 'PASS', iconWidth, errors });
       await page.close();
@@ -85,9 +86,9 @@ async function gemPoint(page) {
       await page.waitForFunction(() => document.querySelector('.gem-interaction-hint')?.classList.contains('is-visible'));
       assert.equal(await page.locator('.gem-interaction-hint').evaluate(node => node.getAttribute('aria-hidden')), 'false');
 
-      // Check mobile icon width (42px)
+      // Check mobile icon width (28px)
       const iconWidth = await page.locator('.gem-interaction-hint__icon').evaluate(node => Math.round(node.getBoundingClientRect().width));
-      assert.equal(iconWidth, 42, `Mobile icon width should be 42px, got ${iconWidth}`);
+      assert.equal(iconWidth, 28, `Mobile icon width should be 28px, got ${iconWidth}`);
 
       // Screenshot mobile state
       await page.screenshot({ path: '.qa/mobile-gem-hint.png' });
@@ -97,8 +98,27 @@ async function gemPoint(page) {
       await page.touchscreen.tap(point.x, point.y);
       await page.waitForFunction(() => window.__PETAL_HEART_APP__.stateMachine.state === 'GEM_ACTIVATION');
       assert.equal(await page.locator('.gem-interaction-hint').evaluate(node => node.getAttribute('aria-hidden')), 'true');
+      assert.equal(await page.locator('.gem-interaction-hint').evaluate(node => getComputedStyle(node).transitionDuration), '0s');
       assert.deepEqual(errors, []);
       report.push({ viewport: 'mobile', result: 'PASS', iconWidth, errors });
+      await page.close();
+    }
+
+    for (const mobile of [false, true]) {
+      const page = await browser.newPage({
+        viewport: mobile ? { width: 390, height: 844 } : { width: 1280, height: 720 },
+        isMobile: mobile, hasTouch: mobile,
+      });
+      await page.goto(url);
+      await page.waitForFunction(() => window.__PETAL_HEART_APP__?.gemSystem.idleTime > 0);
+      assert.equal(await page.evaluate(() => window.__PETAL_HEART_APP__.gemSystem.rippleMesh.visible), false);
+      const point = await gemPoint(page);
+      if (mobile) await page.touchscreen.tap(point.x, point.y);
+      else await page.mouse.click(point.x, point.y);
+      assert(await page.evaluate(() => window.__PETAL_HEART_APP__.gemSystem.idleTime < 3));
+      await page.waitForTimeout(3200);
+      assert.equal(await page.locator('.gem-interaction-hint').evaluate(node => getComputedStyle(node).visibility), 'hidden');
+      report.push({ viewport: mobile ? 'mobile' : 'desktop', earlyClick: 'PASS' });
       await page.close();
     }
 

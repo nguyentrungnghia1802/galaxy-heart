@@ -116,7 +116,7 @@ export class App {
       getContext: () => this.soundSystem.ensureContext(),
     });
     this.captionRenderer = options.captionRenderer ?? new CaptionRenderer(
-      container, this.musicConfig, this.documentTarget,
+      container, { ...this.musicConfig, debug: options.captionDebug ?? false }, this.documentTarget,
     );
     this.gemHint = options.gemHint ?? new GemInteractionHint(
       container,

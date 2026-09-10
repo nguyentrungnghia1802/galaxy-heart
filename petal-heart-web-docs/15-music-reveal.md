@@ -1,67 +1,71 @@
-# Music Reveal — configuration and lifecycle
+# Music Reveal: configuration and QA
 
-The active ending is `PETAL_FLIGHT → GEM_IDLE → GEM_ACTIVATION → MUSIC_REVEAL → FINAL`.
-This supersedes the older gem burst / 3D “I love you!” / replay ending documented in the historical task entries. The old text module is no longer instantiated or imported by App.
+The flow is explosion → floating gem → click/tap → gem activation → music and word captions → FINAL. The old 3D love text and gem sound are not used. Existing petals keep drifting, with the same scene and meshes.
 
-## Supply the real track and captions
+## Adjust timestamps
 
-Edit **`src/config/musicReveal.js`**. Place the supplied audio under `public/assets/audio/`, then set:
+Edit only `src/config/musicCaptions.js`. `WORD_TIMELINE` contains all 48 words across eight lyric lines, with absolute `audio.currentTime` values in seconds. The supplied alignment is approximate; listen and adjust each `time` as needed. Keep entries chronological and each line together.
 
 ```js
-music: {
-  src: `${import.meta.env.BASE_URL}assets/audio/your-track.mp3`,
-  startTime: 32,  // absolute seconds into the source file
-  endTime: 96,   // absolute seconds; null means the natural end of the file
-  volume: 0.7,   // 0..1; independent of heartbeat
-},
-captions: [
-  { start: 33.2, end: 36.8, text: 'Your supplied first line' },
-  { start: 37.0, end: 40.0, text: 'Your supplied next line' },
-],
-captionFade: 0.6,
-activation: { duration: 1.2, pulseFraction: 0.22, pulseScale: 0.035 },
-gemHint: { delay: 3 }, // seconds in GEM_IDLE before the hand cue appears
+{ time: 3.71, text: 'love', line: 2 },
+{ time: 5.35, text: 'forever', line: 2, hold: 1.8 },
 ```
 
-The example above is documentation only. Production ships `src: ''` and an empty caption list. No media request, generated sound or caption clock runs in this case: activation fades the gem and the sequence enters a silent FINAL with gently moving petals.
+`hold` optionally overrides `WORD_ANIMATION.holdDuration`. Global defaults in the same file are fade-in 0.15 s, hold 1.15 s and fade-out 0.45 s (1.75 s total). Words independently fade/scale in, hold, then fade/float/blur out. The previous line fades over its last 0.22 s before the next line starts. Invisible spans retain layout space so neighbours do not jump; they are hidden visually and from accessibility, and disposed with the renderer. No whole-line reveal, glow or caption timers are used.
 
-Caption timestamps are **absolute `audio.currentTime` values**, not time since clicking or relative to `startTime`. Intervals are ordered and non-overlapping (`start <= time < end`); gaps intentionally have no text. Put caption intervals inside the chosen music segment, leaving room for each line to fade out before `endTime`. `captionFade` is shortened automatically for short lines. Invalid music intervals or overlapping caption intervals fail configuration validation.
+The first word starts at 2.00 s; music plays without captions before that. App samples the audio clock in its existing render loop. Pauses, seeks and missed frames therefore do not accumulate caption drift.
 
-While the gem remains in `GEM_IDLE`, the premium hand tap cue stays hidden for `gemHint.delay` seconds. It is positioned as a lightweight HTML overlay centered beneath the projected gem with a soft tap cycle, delicate fingertip ripples, and an elegant label cue. A gem interaction removes it immediately; clicking before the delay never shows it.
+Open `?captionDebug=1` (or append `&captionDebug=1`) for a small clock, current word and line. This works in production too; the normal URL has no debug panel.
 
-## Ownership and synchronization
+## Music and audio routing
 
-- `SoundSystem` owns the only AudioContext. Existing heartbeat scheduling, buffers and levels are preserved; the former heartbeat-only `masterGain` is now explicitly named `heartbeatGain`.
-- `MusicSystem` owns one HTMLAudioElement and one `musicGain`. Its output connects directly to the same context destination, outside the heartbeat gain/compressor. Heartbeat mute does not mute music, and music volume/fades cannot change heartbeat gain.
-- The media element starts preloading at App construction. It streams/decodes through the browser; there is no synchronous fetch/decode at gem click. User gesture primes the same element at zero gain, pauses and seeks it, then activation completion starts the chosen segment. No additional AudioContext or duplicated audio element is needed.
-- App's existing RAF samples music `currentTime` and draws the HTML caption overlay. Smoothstep opacity is evaluated from media time; there are no caption timers or frame-delta caption clocks. DOM text is prepared up front and kept stable throughout playback. Seeking/dropped frames immediately select the correct line; pause freezes its opacity.
-- `MUSIC_REVEAL` has infinite default duration and completes through media `ended`, configured `endTime`, stop, or load failure. `timeupdate` also checks segment completion. This is media-event/frame precision, not sample-accurate audio editing.
-- An empty source ends silently. A failed media load records `musicSystem.error` and ends safely. Browser autoplay denial keeps the reveal pending and exposes a minimal **Continue music** button, which retries in a user gesture without replaying the scene.
-- Hiding the tab pauses active or pending playback as well as RAF. Resume retains media position; blocked resume uses the same button. Async completions are guarded against stop, disposal and superseding pause/resume operations.
-- Once activation begins, clicks and App replay cannot restart the sequence. FINAL continues the existing render loop. Dispersed petal instances settle into bounded, slow drift and rotation so a long track does not empty the background.
-- Disposal removes media listeners, clears the source, disconnects music nodes, removes caption/button DOM and then lets SoundSystem close its context.
+`src/config/musicReveal.js` selects the track with `${import.meta.env.BASE_URL}assets/audio/heart.mp3`, plays from zero to natural end (~26.26 s), and keeps music volume at 0.7. The relative default base and `/galaxy-heart/` Pages base are both supported. Do not substitute a Windows path or a root-relative asset URL.
 
-## Music controls
+`SoundSystem` owns one AudioContext. Heartbeat gain is 1.6 with its own compressor; the explosion retains gain 1 and its original compressor settings. `MusicSystem.musicGain` connects separately to the same destination, independent of both buses. There is no master boost.
 
-`app.musicSystem.begin()` is the one-shot sequence start used by App. `play()` resumes, `pause()` retains current time, and `stop()` is terminal for that instance (no accidental replay). `setVolume(value)` changes the stored music level; `fadeTo(value, seconds)` automates only musicGain. There are no production controls beyond the autoplay recovery button yet.
+One audio element preloads at App construction. A gem gesture primes it through zero gain; activation completion starts audible playback. Repeated taps cannot start another sequence. Autoplay denial exposes the existing Continue music button. Hidden tabs pause rendering and music, then resume from the same media position. Natural audio end enters FINAL; replay cannot restart the activated sequence.
 
-## Validation
+The gem hint and surrounding ripple wait three idle seconds. An early click prevents them; activation dismisses the HTML hint without a fade-out delay.
 
-Run `npm test` and `npm run build`. The unit fixtures use a fake media element/time; they contain no audio bytes. `tests/browser/musicReveal.cjs` runs against Vite using Playwright, with a test-only clock injected into the real App and real Three.js scene. It checks desktop/mobile tap flow, caption boundaries and fades, seek/frame jumps, pause/resume, resize, final/replay guards, no media requests, stable scene identity and disposal. Set `NODE_PATH` to an existing Playwright installation and run:
+## Run QA
 
 ```powershell
-npm run dev -- --host 127.0.0.1
-# In another terminal:
+npm test
+npm run build
+npm run dev -- --host 127.0.0.1 --port 5173
+# In another terminal, with Playwright installed or NODE_PATH pointing to its installation:
 node tests/browser/musicReveal.cjs
+node tests/browser/audioLevels.cjs
+node tests/browser/gemInteractionHint.cjs
 ```
 
-Screenshots and JSON output go to ignored `.qa/`. These fixtures are not imported by production. Real-track decode, real-file trim accuracy and physical iOS/Android autoplay still need validation when the actual track is supplied; no such results are claimed from a mocked media clock.
+For production root preview, run `npm run preview -- --host 127.0.0.1 --port 4173` after a default build, then:
 
-### QA evidence — 2026-09-10
+```powershell
+$env:QA_BASE_URL='http://127.0.0.1:4173/'
+$env:QA_LABEL='production-root'
+node tests/browser/wordMusicReveal.cjs
+```
 
-- `npm test`: 21 files, 112 tests PASS.
-- `npm run build`: PASS; Vite reports the existing class of warning for a bundle above 500 kB.
-- Playwright Chromium headless: desktop 1280×720 and mobile emulation 390×844 (touch), plus resize to 1000×720 and mobile landscape 844×390: PASS. Zero page errors and zero media requests. One caption overlay; three fixture play calls correspond to silent priming, reveal and explicit pause/resume, not duplicate playback.
-- Screenshots inspected: `.qa/desktop-caption.png`, `.qa/mobile-caption.png` and final scene captures. Captions fit the viewport and the gem/old text are absent at FINAL.
-- The 60-frame samples include headless rendering/startup overhead: maximum frame intervals were approximately 317 ms desktop and 150 ms mobile. These are not a 60 FPS performance certification; physical-device profiling and real-media startup QA remain for the supplied track. No synchronous media decode or new scene allocation occurs at reveal.
-- Code review found and regression tests now cover stale play completion and hidden-tab priming races.
+For Pages, build and preview with the same base:
+
+```powershell
+$env:GITHUB_PAGES='true'
+npm run build
+npm run preview -- --host 127.0.0.1 --port 4174
+# Another terminal:
+$env:QA_BASE_URL='http://127.0.0.1:4174/galaxy-heart/'
+$env:QA_LABEL='production-pages'
+node tests/browser/wordMusicReveal.cjs
+```
+
+Browser fixtures use the real MP3 and Chromium desktop/mobile touch emulation. They check loading, early caption silence, per-word fades, clean line changes, debug mode, repeated taps, one AudioContext, stable scene/canvas, final state, resizing and page/network errors. Screenshots and reports go to ignored `.qa/`. Offline audio rendering compares heartbeat RMS/peak and checks that explosion levels are unchanged. These checks do not certify physical-device performance, speaker response or perceptual distortion on every device.
+
+## Verified on 2026-09-10
+
+- `npm test`: 23 files, 119 tests passed. Default production build and `GITHUB_PAGES=true` build passed; Vite reports the existing >500 kB bundle warning.
+- Real-MP3 Chromium QA passed at local dev, production root and production `/galaxy-heart/`, each at desktop 1280×720 and mobile touch 390×844 plus resize/landscape checks. First visible word arrived between 2.018 and 2.091 media seconds. No page exceptions or failed same-origin responses; startup console smoke checks also had zero errors at all three bases.
+- Caption lifecycle, backward seek, line boundaries, debug enabled/disabled, single activation despite repeated taps, one AudioContext, stable canvas and FINAL checks passed. Desktop dev also played through the remaining track naturally; other end checks seek near the real media end.
+- Gem QA passed for delayed hints and early clicks on desktop/mobile. Icon widths are 26/28 px and dismissal transition duration is zero. Screenshots for captions and gem were inspected.
+- Offline heartbeat RMS increased from 0.1603 to 0.1952 (~22%), peak was 0.8422, with zero clipped samples in the rapid/final-beat fixture. Explosion output was identical before/after; music volume remains 0.7. This is a rendered signal measurement, not a physical speaker listening test.
+- The original MP3 and both build copies have identical SHA-256 hashes. The live music file is ~26.26 seconds; timestamps remain deliberately approximate for manual tuning.

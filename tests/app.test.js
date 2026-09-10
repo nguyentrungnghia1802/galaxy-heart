@@ -5,6 +5,7 @@ import { App } from '../src/app/App.js';
 import { DEFAULT_STATE_DURATIONS } from '../src/app/StateMachine.js';
 import { createScene } from '../src/scene/createScene.js';
 import { RendererSystem } from '../src/scene/RendererSystem.js';
+import { MUSIC_REVEAL_CONFIG } from '../src/config/musicReveal.js';
 
 class FakeDocument extends EventTarget {
   constructor() {
@@ -106,6 +107,8 @@ function createHarness({ durations = createFastDurations() } = {}) {
       flutterEnabled: false,
     }),
     durations,
+    // Core lifecycle harness is intentionally media-free; browser QA uses heart.mp3.
+    musicConfig: { ...MUSIC_REVEAL_CONFIG, music: { src: '' } },
     continuousEndLoop: false,
     documentTarget,
     windowTarget,

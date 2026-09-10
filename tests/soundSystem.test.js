@@ -268,16 +268,22 @@ describe('SoundSystem', () => {
     sound.dispose();
   });
 
-  it('configures heartbeat volume to 1.0 and limiter with protective headroom', async () => {
+  it('raises only cardiac output while keeping explosion gain and limiter settings', async () => {
     const sound = new SoundSystem({
       AudioContext: MockAudioContext,
       autoInit: true,
     });
     await sound.unlock();
 
-    expect(sound.heartbeatVolume).toBe(1.0);
+    expect(sound.heartbeatVolume).toBeGreaterThan(1.0);
+    sound.playHeartbeat();
+    expect(sound.ctx.createGain.mock.results.at(-1).value.connect).toHaveBeenCalledWith(sound.heartbeatGain);
+    sound.playSoftExplosion();
+    expect(sound.ctx.createGain.mock.results.at(-1).value.connect).toHaveBeenCalledWith(sound.effectsGain);
+    expect(sound.effectsGain.gain.setValueAtTime).toHaveBeenCalledWith(1, 0.5);
     expect(sound.compressor).toBeDefined();
-    expect(sound.compressor.threshold.setValueAtTime).toHaveBeenCalledWith(-2.5, 0.5);
+    expect(sound.compressor.threshold.setValueAtTime).toHaveBeenCalledWith(-8, 0.5);
+    expect(sound.effectsCompressor.threshold.setValueAtTime).toHaveBeenCalledWith(-2.5, 0.5);
     expect(sound.compressor.ratio.setValueAtTime).toHaveBeenCalledWith(12, 0.5);
 
     sound.dispose();

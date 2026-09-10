@@ -45,7 +45,11 @@ if (!isWebGLAvailable()) {
         )
       : undefined;
   const qualityProfile = QUALITY_PROFILES[debugQuality] ?? undefined;
-  const app = new App(container, { durations, qualityProfile });
+  const app = new App(container, {
+    durations,
+    qualityProfile,
+    captionDebug: params.get('captionDebug') === '1',
+  });
 
   const assetLoader = new AssetLoader();
   const petalTextureUrl = `${import.meta.env.BASE_URL}assets/textures/petal.webp`;
@@ -111,4 +115,3 @@ if (!isWebGLAvailable()) {
     window.__PETAL_HEART_APP__ = app;
   }
 }
-

@@ -20,12 +20,13 @@ export class SoundSystem {
 
     this.ctx = null;
     this.heartbeatGain = null;
+    this.effectsGain = null;
     this.compressor = null;
 
     this.unlocked = false;
     this.muted = false;
-    // Heartbeat volume (1.0) for ~5x perceived acoustic presence
-    this.heartbeatVolume = options.volume ?? 1.0;
+    // Stronger cardiac signal with dedicated peak control; music/effects keep their levels.
+    this.heartbeatVolume = options.volume ?? 1.6;
 
     // Heartbeat pre-rendered acoustic buffers
     this.lubBuffer = null;
@@ -55,12 +56,21 @@ export class SoundSystem {
     try {
       this.ctx = new this.audioContextClass();
 
-      // Master Peak Limiter (prevents any digital clipping or volume spikes while allowing ~5x perceived loudness)
+      // Preserve the old effect compressor exactly; only cardiac dynamics get stronger.
+      this.effectsCompressor = this.ctx.createDynamicsCompressor();
+      this.effectsCompressor.threshold.setValueAtTime(-2.5, this.ctx.currentTime);
+      this.effectsCompressor.knee.setValueAtTime(6, this.ctx.currentTime);
+      this.effectsCompressor.ratio.setValueAtTime(12, this.ctx.currentTime);
+      this.effectsCompressor.attack.setValueAtTime(0.003, this.ctx.currentTime);
+      this.effectsCompressor.release.setValueAtTime(0.08, this.ctx.currentTime);
+      this.effectsCompressor.connect(this.ctx.destination);
+
+      // Cardiac-only limiter: quicker attack and lower threshold retain transient headroom.
       this.compressor = this.ctx.createDynamicsCompressor();
-      this.compressor.threshold.setValueAtTime(-2.5, this.ctx.currentTime);
+      this.compressor.threshold.setValueAtTime(-8, this.ctx.currentTime);
       this.compressor.knee.setValueAtTime(6, this.ctx.currentTime);
       this.compressor.ratio.setValueAtTime(12, this.ctx.currentTime);
-      this.compressor.attack.setValueAtTime(0.003, this.ctx.currentTime);
+      this.compressor.attack.setValueAtTime(0.001, this.ctx.currentTime);
       this.compressor.release.setValueAtTime(0.08, this.ctx.currentTime);
       this.compressor.connect(this.ctx.destination);
 
@@ -71,6 +81,11 @@ export class SoundSystem {
         this.ctx.currentTime,
       );
       this.heartbeatGain.connect(this.compressor);
+
+      // Preserve the explosion level independently of the stronger heartbeat bus.
+      this.effectsGain = this.ctx.createGain();
+      this.effectsGain.gain.setValueAtTime(this.muted ? 0 : 1, this.ctx.currentTime);
+      this.effectsGain.connect(this.effectsCompressor);
 
       // Pre-render acoustic buffers
       this.buildAcousticBuffers();
@@ -255,10 +270,12 @@ export class SoundSystem {
       const targetGain = this.muted ? 0 : this.heartbeatVolume;
       this.heartbeatGain.gain.cancelScheduledValues(now);
       this.heartbeatGain.gain.linearRampToValueAtTime(targetGain, now + 0.04);
+      this.effectsGain.gain.cancelScheduledValues(now);
+      this.effectsGain.gain.linearRampToValueAtTime(this.muted ? 0 : 1, now + 0.04);
     }
   }
 
-  playBuffer(buffer, volume = 1.0) {
+  playBuffer(buffer, volume = 1.0, output = this.heartbeatGain) {
     if (!this.ctx || !buffer || this.muted) return;
 
     const now = this.ctx.currentTime;
@@ -269,7 +286,7 @@ export class SoundSystem {
     gain.gain.setValueAtTime(Math.max(0.001, volume), now);
 
     source.connect(gain);
-    gain.connect(this.heartbeatGain);
+    gain.connect(output);
 
     this.activeSources.add(source);
     source.onended = () => {
@@ -305,7 +322,7 @@ export class SoundSystem {
 
   playSoftExplosion() {
     if (!this.softBurstBuffer) return;
-    this.playBuffer(this.softBurstBuffer, 0.60);
+    this.playBuffer(this.softBurstBuffer, 0.60, this.effectsGain);
   }
 
   // --------------------------------------------------------------------------

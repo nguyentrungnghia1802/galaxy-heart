@@ -54,6 +54,21 @@ describe('PostProcessing', () => {
     fx.update(0.016, { state: 'HEARTBEAT', heartbeatIntensity: 2.0 });
     expect(fx.bloomPass.strength).toBeGreaterThan(initialStrength);
 
+    fx.currentStrength = fx.baseStrength;
+    fx.update(0.016, {
+      state: 'TENSION',
+      progress: 0.6,
+      heartbeatIntensity: 0,
+    });
+    const restingFinalStrength = fx.bloomPass.strength;
+    fx.currentStrength = fx.baseStrength;
+    fx.update(0.016, {
+      state: 'TENSION',
+      progress: 0.6,
+      heartbeatIntensity: 1.2,
+    });
+    expect(fx.bloomPass.strength).toBeGreaterThan(restingFinalStrength);
+
     fx.update(0.016, { state: 'EXPLOSION', progress: 0.02 });
     expect(fx.bloomPass.strength).toBeGreaterThan(initialStrength * 1.5);
   });

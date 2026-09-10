@@ -127,7 +127,7 @@ console.log('Generated heartbeat-lub.wav:', { duration: lubData.duration, peak: 
 
 // 2. Secondary Heartbeat (Dub - S2)
 const dubData = synthesizeHeartbeat({
-  duration: 0.17,
+  duration: 0.23,
   startFreq: 128,
   endFreq: 72,
   attackTime: 0.015,

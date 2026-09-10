@@ -1,10 +1,17 @@
+import {
+  HEARTBEAT_DUB_DURATION_SECONDS,
+  HEARTBEAT_DUB_PHASE,
+  HEARTBEAT_INTERVAL_SECONDS,
+  HEARTBEAT_LUB_PHASE,
+} from '../heart/heartbeatEnvelope.js';
+
 /**
  * SoundSystem - Minimalist biological cardiac sound director.
  *
  * Focuses exclusively on natural acoustic heartbeat and soft climax release:
  * 1. Natural biological heartbeat (Lub-Dub) with rich thoracic resonance and zero electronic artifacts.
- * 2. Synchronized acceleration: slow -> faster -> rapid -> final strong beat.
- * 3. Final heartbeat impact right before explosion.
+ * 2. Seven synchronized slow cycles with no tempo ramp.
+ * 3. A slightly accented final lub-dub that releases directly into explosion.
  * 4. Very soft, quiet low-frequency whoosh/breath on explosion (strictly non-bomb).
  *
  * Excludes all gem sounds, synthetic chimes, sparkles, pads, hums, and UI clicks for a pure, clean experience.
@@ -172,7 +179,7 @@ export class SoundSystem {
     // Settles naturally from 128Hz down to 72Hz.
     this.dubBuffer = this.renderCardiacBuffer({
       sampleRate,
-      duration: 0.17,
+      duration: HEARTBEAT_DUB_DURATION_SECONDS,
       startFreq: 128,
       endFreq: 72,
       attackTime: 0.015,
@@ -343,7 +350,12 @@ export class SoundSystem {
     }
   }
 
-  playBuffer(buffer, volume = 1.0, output = this.heartbeatGain) {
+  playBuffer(
+    buffer,
+    volume = 1.0,
+    output = this.heartbeatGain,
+    startOffsetSeconds = 0,
+  ) {
     if (!this.ctx || !buffer || this.muted) return;
 
     const now = this.ctx.currentTime;
@@ -391,20 +403,41 @@ export class SoundSystem {
       }
     };
 
-    source.start(now);
+    const safeOffset = Math.max(
+      0,
+      Math.min(
+        startOffsetSeconds,
+        typeof buffer.duration === 'number'
+          ? Math.max(0, buffer.duration - 0.001)
+          : startOffsetSeconds,
+      ),
+    );
+    source.start(now, safeOffset);
   }
 
   // --------------------------------------------------------------------------
   // Biological Heartbeat Pulses (natural acoustic presence, warm chest resonance)
   // --------------------------------------------------------------------------
-  playHeartbeat(intensity = 0.5, isRapid = false, isDub = false) {
+  playHeartbeat(
+    intensity = 0.5,
+    isRapid = false,
+    isDub = false,
+    isFinal = false,
+    startOffsetSeconds = 0,
+  ) {
     const buffer = isDub ? this.dubBuffer : this.lubBuffer;
     if (!buffer) return;
 
     // Natural dynamics: Lub is slightly rounder, Dub is crisper
     const baseVol = isDub ? 0.88 : 1.0;
-    const volume = Math.min(1.15, baseVol + intensity * 0.1);
-    this.playBuffer(buffer, volume);
+    const finalAccent = isFinal ? 0.05 : 0;
+    const volume = Math.min(1.15, baseVol + intensity * 0.1 + finalAccent);
+    this.playBuffer(
+      buffer,
+      volume,
+      this.heartbeatGain,
+      startOffsetSeconds,
+    );
   }
 
   playFinalBeat() {
@@ -425,11 +458,15 @@ export class SoundSystem {
     if (!this.ctx || !this.unlocked) return;
 
     const state = stateSnapshot?.state ?? 'BOOT';
-    const progress = stateSnapshot?.progress ?? 0;
 
-    // 1. Normal & Rapid Heartbeat
-    if (state === 'HEARTBEAT' || state === 'RAPID_HEARTBEAT') {
-      const isRapid = state === 'RAPID_HEARTBEAT';
+    // All seven beats share one HeartSystem phase. TENSION is the accented
+    // seventh lub-dub; RAPID_HEARTBEAT remains a zero-duration compatibility state.
+    if (
+      state === 'HEARTBEAT' ||
+      state === 'RAPID_HEARTBEAT' ||
+      state === 'TENSION'
+    ) {
+      const isFinal = state === 'TENSION';
       const phase = heartSystem?.phase ?? 0;
       const intensity = stateSnapshot?.heartbeatIntensity ?? 0.5;
 
@@ -440,30 +477,36 @@ export class SoundSystem {
       }
 
       // Lub triggers at the onset of primary contraction (~phase 0.06 - 0.20)
-      if (!this.lubTriggered && phase >= 0.06 && phase <= 0.20) {
-        this.playHeartbeat(intensity, isRapid, false);
+      if (!this.lubTriggered && phase >= HEARTBEAT_LUB_PHASE) {
+        const startOffsetSeconds =
+          (phase - HEARTBEAT_LUB_PHASE) * HEARTBEAT_INTERVAL_SECONDS;
+        this.playHeartbeat(
+          intensity,
+          false,
+          false,
+          isFinal,
+          startOffsetSeconds,
+        );
         this.lubTriggered = true;
       }
 
       // Dub triggers at the onset of secondary closure (~phase 0.24 - 0.42)
-      if (!this.dubTriggered && phase >= 0.24 && phase <= 0.42) {
-        this.playHeartbeat(intensity, isRapid, true);
+      if (!this.dubTriggered && phase >= HEARTBEAT_DUB_PHASE) {
+        const startOffsetSeconds =
+          (phase - HEARTBEAT_DUB_PHASE) * HEARTBEAT_INTERVAL_SECONDS;
+        this.playHeartbeat(
+          intensity,
+          false,
+          true,
+          isFinal,
+          startOffsetSeconds,
+        );
         this.dubTriggered = true;
       }
 
       this.lastHeartbeatPhase = phase;
       this.finalBeatTriggered = false;
       this.explosionTriggered = false;
-    } else if (state === 'TENSION') {
-      this.lastHeartbeatPhase = -1;
-      this.lubTriggered = false;
-      this.dubTriggered = false;
-
-      // Final Strong Beat: triggers during diastolic expansion surge (progress >= 0.42)
-      if (!this.finalBeatTriggered && progress >= 0.42) {
-        this.playFinalBeat();
-        this.finalBeatTriggered = true;
-      }
     } else if (state === 'EXPLOSION') {
       this.lastHeartbeatPhase = -1;
       this.lubTriggered = false;

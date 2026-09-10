@@ -31,52 +31,62 @@ describe('sampleHeartbeatEnvelope', () => {
 });
 
 describe('getHeartbeatInterval', () => {
-  it('accelerates non-linearly from 0.90 seconds to 0.28 seconds', () => {
+  it('keeps every heartbeat cycle at the original 0.90 second interval', () => {
     expect(getHeartbeatInterval(0)).toBeCloseTo(0.9, 6);
-    expect(getHeartbeatInterval(0.5)).toBeCloseTo(0.8225, 6);
-    expect(getHeartbeatInterval(1)).toBeCloseTo(0.28, 6);
+    expect(getHeartbeatInterval(0.5)).toBeCloseTo(0.9, 6);
+    expect(getHeartbeatInterval(1)).toBeCloseTo(0.9, 6);
   });
 });
 
 describe('heartbeat glow signal', () => {
-  it('can intensify rapidly without increasing the scale envelope', () => {
+  it('does not add a rapid-mode intensity ramp', () => {
     const intensity = getHeartbeatIntensity({
       state: 'RAPID_HEARTBEAT',
       progress: 1,
       pulse: 1,
     });
 
-    expect(intensity).toBeGreaterThan(1.5);
+    expect(intensity).toBe(1);
     expect(sampleHeartbeatEnvelope(0.1)).toBeLessThanOrEqual(1.12);
   });
 });
 
 describe('HeartSystem', () => {
-  it('keeps heartbeat scale below 1.12 and preserves phase into rapid mode', () => {
-    const heart = new HeartSystem();
-    heart.update(0.09, { state: 'HEARTBEAT', progress: 0.2 });
-    const normalPhase = heart.phase;
+  it('keeps the legacy rapid state at the same interval and amplitude', () => {
+    const normalHeart = new HeartSystem();
+    const rapidHeart = new HeartSystem();
+    normalHeart.update(0.09, { state: 'HEARTBEAT', progress: 0.2 });
+    rapidHeart.update(0.09, { state: 'RAPID_HEARTBEAT', progress: 1 });
 
-    expect(heart.getGlobalScale()).toBeLessThanOrEqual(1.12);
-    heart.update(0.01, { state: 'RAPID_HEARTBEAT', progress: 0.5 });
-
-    expect(heart.phase).toBeGreaterThan(normalPhase);
-    expect(heart.getGlobalScale()).toBeLessThanOrEqual(1.12);
-    expect(heart.getIntensity()).not.toBe(heart.getGlobalScale());
+    expect(rapidHeart.phase).toBeCloseTo(normalHeart.phase, 6);
+    expect(rapidHeart.getGlobalScale()).toBeCloseTo(
+      normalHeart.getGlobalScale(),
+      6,
+    );
+    expect(rapidHeart.getGlobalScale()).toBeLessThanOrEqual(1.12);
+    expect(rapidHeart.getIntensity()).not.toBe(rapidHeart.getGlobalScale());
   });
 
-  it('progresses through tension compression and surges into a final strong beat before explosion', () => {
-    const heart = new HeartSystem();
-    // Early tension: compression & coiling
-    heart.update(0.01, { state: 'TENSION', progress: 0.35 });
-    const compressionScale = heart.getGlobalScale();
-    expect(compressionScale).toBeLessThan(1.08);
+  it('plays the final lub-dub on the same phase rate with a slightly stronger response', () => {
+    const dubPhase = 0.28;
+    const finalDubEndPhase = 0.24 + 0.23 / 0.9;
+    const normalHeart = new HeartSystem();
+    const finalHeart = new HeartSystem();
 
-    // Late tension: final massive strong diastolic beat
-    heart.update(0.01, { state: 'TENSION', progress: 0.95 });
-    const finalBeatScale = heart.getGlobalScale();
-    expect(finalBeatScale).toBeGreaterThan(1.2);
-    expect(heart.getIntensity()).toBeGreaterThan(3.0);
+    normalHeart.update(dubPhase * 0.9, { state: 'HEARTBEAT', progress: 0.1 });
+    finalHeart.update(0, {
+      state: 'TENSION',
+      progress: dubPhase / finalDubEndPhase,
+    });
+
+    expect(finalHeart.phase).toBeCloseTo(dubPhase, 6);
+    expect(finalHeart.getGlobalScale()).toBeGreaterThan(normalHeart.getGlobalScale());
+    expect(finalHeart.getIntensity()).toBeGreaterThan(normalHeart.getIntensity());
+
+    finalHeart.update(0, { state: 'TENSION', progress: 1 });
+    expect(finalHeart.phase).toBeCloseTo(finalDubEndPhase, 6);
+    expect(finalHeart.getGlobalScale()).toBeGreaterThan(1);
+    expect(finalHeart.getIntensity()).toBeGreaterThan(0);
   });
 
   it('reset clears phase, scale, intensity, and previous state', () => {
@@ -90,4 +100,3 @@ describe('HeartSystem', () => {
     expect(heart.previousState).toBe(null);
   });
 });
-

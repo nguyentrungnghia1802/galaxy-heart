@@ -64,6 +64,25 @@ describe('StateMachine', () => {
     expect(machine.progress).toBe(0.25);
   });
 
+  it('runs six steady 0.90 second cycles and one final lub-dub before explosion', () => {
+    const machine = new StateMachine();
+    machine.start();
+    machine.transitionTo('HEARTBEAT');
+
+    for (let cycle = 1; cycle < 6; cycle += 1) {
+      machine.update(0.9);
+      expect(machine.state).toBe('HEARTBEAT');
+    }
+
+    machine.update(0.9);
+    expect(machine.state).toBe('TENSION');
+
+    machine.update(0.445);
+    expect(machine.state).toBe('TENSION');
+    machine.update(0.001);
+    expect(machine.state).toBe('EXPLOSION');
+  });
+
   it('keeps FINAL stable until reset', () => {
     const machine = new StateMachine({ durations: createFastDurations(0.01) });
     machine.start();

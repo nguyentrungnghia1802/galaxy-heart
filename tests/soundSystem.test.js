@@ -201,23 +201,49 @@ describe('SoundSystem', () => {
     sound.dispose();
   });
 
-  it('triggers final beat in TENSION and soft explosion in EXPLOSION', async () => {
+  it('plays a final lub-dub in TENSION and releases the explosion after dub', async () => {
     const sound = new SoundSystem({
       AudioContext: MockAudioContext,
       autoInit: true,
     });
     await sound.unlock();
 
+    const spyHeartbeat = vi.spyOn(sound, 'playHeartbeat');
     const spyFinalBeat = vi.spyOn(sound, 'playFinalBeat');
     const spyExplosion = vi.spyOn(sound, 'playSoftExplosion');
 
-    // Tension before diastolic surge
-    sound.update(0.016, { state: 'TENSION', progress: 0.2 });
-    expect(spyFinalBeat).not.toHaveBeenCalled();
+    sound.update(
+      0.016,
+      { state: 'TENSION', progress: 0.1, heartbeatIntensity: 0.8 },
+      { phase: 0.04 },
+    );
+    sound.update(
+      0.016,
+      { state: 'TENSION', progress: 0.2, heartbeatIntensity: 1.1 },
+      { phase: 0.09 },
+    );
+    sound.update(
+      0.016,
+      { state: 'TENSION', progress: 0.6, heartbeatIntensity: 1.2 },
+      { phase: 0.28 },
+    );
 
-    // Tension diastolic expansion surge (progress >= 0.42)
-    sound.update(0.016, { state: 'TENSION', progress: 0.5 });
-    expect(spyFinalBeat).toHaveBeenCalledTimes(1);
+    expect(spyHeartbeat).toHaveBeenCalledTimes(2);
+    expect(spyHeartbeat.mock.calls[0].slice(0, 4)).toEqual([
+      1.1,
+      false,
+      false,
+      true,
+    ]);
+    expect(spyHeartbeat.mock.calls[0][4]).toBeCloseTo(0.027, 6);
+    expect(spyHeartbeat.mock.calls[1].slice(0, 4)).toEqual([
+      1.2,
+      false,
+      true,
+      true,
+    ]);
+    expect(spyHeartbeat.mock.calls[1][4]).toBeCloseTo(0.036, 6);
+    expect(spyFinalBeat).not.toHaveBeenCalled();
 
     // Explosion onset
     sound.update(0.016, { state: 'EXPLOSION', progress: 0.0 });
@@ -233,9 +259,24 @@ describe('SoundSystem', () => {
     sound.update(0.016, { state: 'GEM_BURST', progress: 0.5 });
     sound.update(0.016, { state: 'LOVE_REVEAL', progress: 0.5 });
     sound.update(0.016, { state: 'END', progress: 1.0 });
-    expect(spyFinalBeat).toHaveBeenCalledTimes(1);
+    expect(spyHeartbeat).toHaveBeenCalledTimes(2);
+    expect(spyFinalBeat).not.toHaveBeenCalled();
     expect(spyExplosion).toHaveBeenCalledTimes(1);
 
+    sound.dispose();
+  });
+
+  it('starts a late-sampled heartbeat cue at its phase-aligned audio offset', async () => {
+    const sound = new SoundSystem({
+      AudioContext: MockAudioContext,
+      autoInit: true,
+    });
+    await sound.unlock();
+
+    sound.playHeartbeat(0.8, false, true, false, 0.034);
+
+    const source = sound.ctx.createBufferSource.mock.results.at(-1).value;
+    expect(source.start).toHaveBeenCalledWith(0.5, 0.034);
     sound.dispose();
   });
 

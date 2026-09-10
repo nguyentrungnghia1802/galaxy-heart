@@ -1,5 +1,17 @@
 import { clamp, easeInCubic, lerp } from '../utils/math.js';
 
+export const HEARTBEAT_INTERVAL_SECONDS = 0.9;
+export const STEADY_HEARTBEAT_CYCLES = 6;
+export const HEARTBEAT_LUB_PHASE = 0.06;
+export const HEARTBEAT_DUB_PHASE = 0.24;
+export const HEARTBEAT_DUB_DURATION_SECONDS = 0.23;
+export const FINAL_HEARTBEAT_END_PHASE =
+  HEARTBEAT_DUB_PHASE +
+  HEARTBEAT_DUB_DURATION_SECONDS / HEARTBEAT_INTERVAL_SECONDS;
+export const FINAL_HEARTBEAT_DURATION_SECONDS =
+  HEARTBEAT_DUB_PHASE * HEARTBEAT_INTERVAL_SECONDS +
+  HEARTBEAT_DUB_DURATION_SECONDS;
+
 const HEARTBEAT_KEYFRAMES = Object.freeze([
   Object.freeze([0, 1]),
   Object.freeze([0.1, 1.075]),
@@ -25,9 +37,8 @@ export function sampleHeartbeatEnvelope(localPhase) {
   return 1;
 }
 
-export function getHeartbeatInterval(normalizedRapidProgress) {
-  const progress = clamp(normalizedRapidProgress, 0, 1);
-  return lerp(0.9, 0.28, easeInCubic(progress));
+export function getHeartbeatInterval() {
+  return HEARTBEAT_INTERVAL_SECONDS;
 }
 
 export function getHeartbeatIntensity(stateSnapshot) {
@@ -39,19 +50,13 @@ export function getHeartbeatIntensity(stateSnapshot) {
     return pulse;
   }
   if (state === 'RAPID_HEARTBEAT') {
-    return pulse * lerp(1, 1.75, progress) + progress * 0.25;
+    return pulse;
   }
   if (state === 'TENSION') {
-    // Flow: tension compression -> final strong beat crescendo
-    if (progress < 0.4) {
-      return lerp(1.25, 1.75, progress / 0.4);
-    }
-    const beatP = (progress - 0.4) / 0.6;
-    return lerp(1.75, 3.2, beatP);
+    return pulse * 1.15 + easeInCubic(progress) * 0.35;
   }
   if (state === 'EXPLOSION') {
     return lerp(3.2, 1.0, progress);
   }
   return 0;
 }
-

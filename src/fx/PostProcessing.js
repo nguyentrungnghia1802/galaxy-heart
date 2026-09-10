@@ -62,11 +62,10 @@ export class PostProcessing {
     let targetStrength = this.baseStrength + pulseFactor * 0.45;
 
     if (state === 'RAPID_HEARTBEAT') {
-      // Accelerating glow crescendo
-      targetStrength += progress * 0.4;
+      targetStrength = this.baseStrength + pulseFactor * 0.45;
     } else if (state === 'TENSION') {
-      // Glow contracts into dense bright tension
-      targetStrength = this.baseStrength * 1.35;
+      // The accented seventh lub-dub follows the shared heartbeat signal.
+      targetStrength = this.baseStrength * 1.15 + pulseFactor * 0.55;
     } else if (state === 'EXPLOSION') {
       // Peak impact bloom flash during first 0.35s, decaying under 1s
       const flash = Math.max(0, 1 - progress * 2.2);

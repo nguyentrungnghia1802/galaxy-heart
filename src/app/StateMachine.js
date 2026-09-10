@@ -1,4 +1,9 @@
 import { MUSIC_REVEAL_CONFIG } from '../config/musicReveal.js';
+import {
+  FINAL_HEARTBEAT_DURATION_SECONDS,
+  HEARTBEAT_INTERVAL_SECONDS,
+  STEADY_HEARTBEAT_CYCLES,
+} from '../heart/heartbeatEnvelope.js';
 import { clamp } from '../utils/math.js';
 
 export const CINEMATIC_STATES = Object.freeze([
@@ -22,9 +27,9 @@ export const DEFAULT_STATE_DURATIONS = Object.freeze({
   PRELOAD: 0,
   INTRO: 1.2,
   HEART_IDLE: 0.8,
-  HEARTBEAT: 2.4,
-  RAPID_HEARTBEAT: 2.2,
-  TENSION: 0.65,
+  HEARTBEAT: HEARTBEAT_INTERVAL_SECONDS * STEADY_HEARTBEAT_CYCLES,
+  RAPID_HEARTBEAT: 0,
+  TENSION: FINAL_HEARTBEAT_DURATION_SECONDS,
   EXPLOSION: 0.45,
   PETAL_FLIGHT: 2.8,
   GEM_IDLE: 1.0,

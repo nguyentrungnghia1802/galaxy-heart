@@ -34,22 +34,23 @@ function createMockDocument() {
   };
 }
 
-describe('CaptionRenderer 3D Visual & Dynamics', () => {
-  const words = [
-    { time: 2.0, text: 'My', line: 1 },
-    { time: 2.5, text: 'baby', line: 1, hold: 1.0 },
-    { time: 4.0, text: 'I', line: 2 },
+describe('CaptionRenderer Phrase-Level 3D Visual & Dynamics', () => {
+  const captions = [
+    { time: 0.0, text: 'My baby', section: 1 },
+    { time: 1.2, text: 'I love you so much', section: 1 },
+    { time: 3.1, text: 'Forever', section: 1, hold: 0.7 },
   ];
 
-  it('mounts word spans with 3D structure and initial hidden styles', () => {
+  it('mounts phrase elements with 3D structure and initial hidden styles', () => {
     const container = createMockElement('div');
     const doc = createMockDocument();
-    const renderer = new CaptionRenderer(container, { words, debug: true }, doc);
+    const renderer = new CaptionRenderer(container, { captions, debug: true }, doc);
 
     expect(renderer.nodes).toHaveLength(3);
     expect(renderer.element.className).toBe('music-captions');
-    expect(renderer.nodes[0].className).toBe('music-caption__word');
-    expect(renderer.nodes[0].textContent).toBe('My');
+    expect(renderer.nodes[0].className).toBe('music-caption music-caption--phrase');
+    expect(renderer.nodes[0].textContent).toBe('My baby');
+    expect(renderer.nodes[0].dataset.section).toBe('1');
     expect(renderer.nodes[0].style.opacity).toBe('0');
     expect(renderer.nodes[0].style.visibility).toBe('hidden');
     expect(renderer.debugElement).toBeDefined();
@@ -59,17 +60,13 @@ describe('CaptionRenderer 3D Visual & Dynamics', () => {
     expect(renderer.debugElement.removed).toBe(true);
   });
 
-  it('applies 3D transforms (translate3d, rotateX, rotateY, rotateZ, scale) during enter phase', () => {
+  it('applies 3D transforms (translate3d, rotateX, rotateY, rotateZ, scale) during phrase enter phase', () => {
     const container = createMockElement('div');
     const doc = createMockDocument();
-    const renderer = new CaptionRenderer(container, { words }, doc);
+    const renderer = new CaptionRenderer(container, { captions }, doc);
 
-    // Before word time: hidden
-    renderer.update(1.99, true);
-    expect(renderer.nodes[0].style.visibility).toBe('hidden');
-
-    // Midway through enter (e.g. t = 2.09, fadeIn is ~0.18s)
-    renderer.update(2.09, true);
+    // Midway through enter of first phrase (t = 0.10s)
+    renderer.update(0.10, true);
     const node = renderer.nodes[0];
     expect(node.style.visibility).toBe('visible');
     expect(Number.parseFloat(node.style.opacity)).toBeGreaterThan(0);
@@ -86,40 +83,36 @@ describe('CaptionRenderer 3D Visual & Dynamics', () => {
     renderer.dispose();
   });
 
-  it('keeps words in hold with micro-floating and fully opaque, then applies exit upward drift and blur', () => {
+  it('keeps phrase in hold with micro-floating and fully opaque, then smoothly crossfades into next phrase', () => {
     const container = createMockElement('div');
     const doc = createMockDocument();
-    const renderer = new CaptionRenderer(container, { words }, doc);
+    const renderer = new CaptionRenderer(container, { captions }, doc);
 
-    // Hold phase: t = 2.4s (word 0 has entered, hold is active)
-    renderer.update(2.4, true);
+    // Hold phase: t = 0.5s (phrase 0 has entered, vocal hold is active)
+    renderer.update(0.5, true);
     const node0 = renderer.nodes[0];
     expect(node0.style.visibility).toBe('visible');
     expect(Number.parseFloat(node0.style.opacity)).toBeCloseTo(1.0, 1);
     expect(node0.style.filter).toBe('none');
 
-    // Exit phase: t = 3.6s (word 0 is exiting, fadeOut is active)
-    renderer.update(3.6, true);
-    expect(Number.parseFloat(node0.style.opacity)).toBeLessThan(1.0);
-    expect(node0.style.filter).toContain('blur');
-
-    // Fully expired: t = 3.9s
-    renderer.update(3.9, true);
-    expect(node0.style.visibility).toBe('hidden');
-    expect(node0.style.opacity).toBe('0.0000');
+    // Next phrase enters at t = 1.20s: at t = 1.35s, phrase 1 is strongly visible
+    renderer.update(1.35, true);
+    const node1 = renderer.nodes[1];
+    expect(node1.style.visibility).toBe('visible');
+    expect(Number.parseFloat(node1.style.opacity)).toBeGreaterThan(0.5);
 
     renderer.dispose();
   });
 
-  it('formats debug HUD output correctly', () => {
+  it('formats debug HUD output with current phrase and section', () => {
     const container = createMockElement('div');
     const doc = createMockDocument();
-    const renderer = new CaptionRenderer(container, { words, debug: true }, doc);
+    const renderer = new CaptionRenderer(container, { captions, debug: true }, doc);
 
-    renderer.update(2.1, true);
-    expect(renderer.debugElement.textContent).toContain('Music: 02.100s');
-    expect(renderer.debugElement.textContent).toContain('Current: My');
-    expect(renderer.debugElement.textContent).toContain('Line: 1');
+    renderer.update(0.5, true);
+    expect(renderer.debugElement.textContent).toContain('Music: 00.500s');
+    expect(renderer.debugElement.textContent).toContain('Current: My baby');
+    expect(renderer.debugElement.textContent).toContain('Section: 1');
 
     renderer.dispose();
   });

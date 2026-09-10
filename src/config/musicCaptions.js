@@ -1,74 +1,58 @@
-// Edit this file to align the lyrics. All times are absolute audio.currentTime seconds.
-// This is a ROUGH first alignment, not a transcription of the recording.
-// Keep words in chronological order, with each line grouped together.
-// Optional per-word `hold` overrides holdDuration, e.g. { time: 5.35, text: 'forever', line: 2, hold: 1.8 }.
-export const WORD_TIMELINE = [
-  { time: 2.00, text: 'My', line: 1 },
-  { time: 2.45, text: 'baby', line: 1 },
+// Centralized Phrase-Level Music Captions Timeline
+// Audio starts at 0.00s. All times are absolute audio.currentTime seconds.
+// You can freely edit `time` or `hold` values below to fine-tune vocal synchronization.
 
-  { time: 3.00, text: 'I', line: 2 },
-  { time: 3.15, text: 'love', line: 2 },
-  { time: 3.30, text: 'you', line: 2 },
-  { time: 4.00, text: 'so', line: 2 },
-  { time: 4.65, text: 'much', line: 2 },
-  { time: 5.05, text: 'forever', line: 2 },
-  { time: 5.80, text: 'you', line: 2 },
-  { time: 6.10, text: 'and', line: 2 },
-  { time: 6.45, text: 'I', line: 2 },
+export const CAPTION_TIMELINE = [
+  // ==========================================
+  // SECTION 1 (0.00s – 5.14s)
+  // ==========================================
+  { time: 0.00, text: 'My baby', section: 1 },
+  { time: 1.20, text: 'I love you so much', section: 1 },
+  { time: 3.10, text: 'Forever', section: 1, hold: 0.70 },
+  { time: 4.20, text: 'you and I', section: 1 },
 
-  { time: 7.15, text: 'I', line: 3 },
-  { time: 7.45, text: 'love', line: 3 },
-  { time: 7.80, text: 'you', line: 3 },
-  { time: 8.15, text: 'oh', line: 3 },
+  // ==========================================
+  // SECTION 2 (~5.14s – 11.94s)
+  // ==========================================
+  { time: 5.14, text: 'I love you', section: 2 },
+  { time: 6.20, text: 'oh~', section: 2, hold: 0.85 },
+  { time: 7.50, text: 'I love you so much', section: 2 },
+  { time: 9.90, text: 'Forever', section: 2, hold: 0.85 },
+  { time: 11.20, text: 'you and I', section: 2 },
 
-  { time: 8.90, text: 'I', line: 4 },
-  { time: 9.20, text: 'love', line: 4 },
-  { time: 9.55, text: 'you', line: 4 },
-  { time: 9.85, text: 'so', line: 4 },
-  { time: 10.15, text: 'much', line: 4 },
-  { time: 10.50, text: 'forever', line: 4 },
-  { time: 11.20, text: 'you', line: 4 },
-  { time: 11.55, text: 'and', line: 4 },
-  { time: 11.90, text: 'I', line: 4 },
+  // ==========================================
+  // SECTION 3 (~11.94s – 17.10s)
+  // ==========================================
+  { time: 11.94, text: 'My baby', section: 3 },
+  { time: 13.05, text: 'I love you so much', section: 3 },
+  { time: 15.00, text: 'Forever', section: 3, hold: 0.75 },
+  { time: 16.15, text: 'you and I', section: 3 },
 
-  { time: 13.10, text: 'My', line: 5 },
-  { time: 13.55, text: 'baby', line: 5 },
-
-  { time: 14.30, text: 'I', line: 6 },
-  { time: 14.65, text: 'love', line: 6 },
-  { time: 15.00, text: 'you', line: 6 },
-  { time: 15.35, text: 'so', line: 6 },
-  { time: 15.70, text: 'much', line: 6 },
-  { time: 16.05, text: 'forever', line: 6 },
-  { time: 16.80, text: 'you', line: 6 },
-  { time: 17.15, text: 'and', line: 6 },
-  { time: 17.50, text: 'I', line: 6 },
-
-  { time: 18.25, text: 'I', line: 7 },
-  { time: 18.55, text: 'love', line: 7 },
-  { time: 18.90, text: 'you', line: 7 },
-  { time: 19.25, text: 'oh', line: 7 },
-
-  { time: 20.00, text: 'I', line: 8 },
-  { time: 20.35, text: 'love', line: 8 },
-  { time: 20.70, text: 'you', line: 8 },
-  { time: 21.05, text: 'so', line: 8 },
-  { time: 21.40, text: 'much', line: 8 },
-  { time: 21.80, text: 'forever', line: 8 },
-  { time: 22.55, text: 'you', line: 8 },
-  { time: 22.95, text: 'and', line: 8 },
-  { time: 23.40, text: 'I', line: 8 },
+  // ==========================================
+  // SECTION 4 (~17.10s – 24.13s)
+  // ==========================================
+  { time: 17.10, text: 'I love you', section: 4 },
+  { time: 18.15, text: 'oh~', section: 4, hold: 0.85 },
+  { time: 19.35, text: 'I love you so much', section: 4 },
+  { time: 21.05, text: 'Forever', section: 4, hold: 0.85 },
+  { time: 22.30, text: 'you and I', section: 4 },
 ];
 
-// Durations in seconds. A word's default life is 0.15 + 1.15 + 0.45 = 1.75 s.
-// Outgoing words fade away by the next line's first timestamp to avoid overlapping lines.
-export const WORD_ANIMATION = Object.freeze({
-  fadeIn: 0.18,
-  holdDuration: 1.15,
-  fadeOut: 0.45,
-  lineFadeOut: 0.22,
-  enterScale: 0.88,
+export const CAPTION_ANIMATION = Object.freeze({
+  fadeIn: 0.22,
+  fadeOut: 0.28,
+  defaultHold: 0.90,
+  enterScale: 0.92,
   exitScale: 0.97,
+  enterY: 12,
   exitY: -8,
+  enterZ: -24,
+  exitZ: -12,
+  enterRotX: 8,
+  exitRotX: -4,
   exitBlur: 1.5,
 });
+
+// Backwards compatibility aliases
+export const WORD_TIMELINE = CAPTION_TIMELINE;
+export const WORD_ANIMATION = CAPTION_ANIMATION;

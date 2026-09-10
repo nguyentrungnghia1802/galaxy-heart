@@ -1,9 +1,16 @@
-import { WORD_TIMELINE, WORD_ANIMATION } from './musicCaptions.js';
+import {
+  CAPTION_TIMELINE,
+  CAPTION_ANIMATION,
+  WORD_TIMELINE,
+  WORD_ANIMATION,
+} from './musicCaptions.js';
 
 const MUSIC_SRC = `${import.meta.env.BASE_URL}assets/audio/heart.mp3`;
 
 export const MUSIC_REVEAL_CONFIG = Object.freeze({
   music: Object.freeze({ src: MUSIC_SRC, startTime: 0, endTime: null, volume: 0.7 }),
+  captions: CAPTION_TIMELINE,
+  captionAnimation: CAPTION_ANIMATION,
   words: WORD_TIMELINE,
   wordAnimation: WORD_ANIMATION,
   activation: Object.freeze({ duration: 1.2, pulseFraction: 0.22, pulseScale: 0.035 }),

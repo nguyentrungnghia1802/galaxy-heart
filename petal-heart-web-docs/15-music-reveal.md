@@ -27,7 +27,7 @@ The example above is documentation only. Production ships `src: ''` and an empty
 
 Caption timestamps are **absolute `audio.currentTime` values**, not time since clicking or relative to `startTime`. Intervals are ordered and non-overlapping (`start <= time < end`); gaps intentionally have no text. Put caption intervals inside the chosen music segment, leaving room for each line to fade out before `endTime`. `captionFade` is shortened automatically for short lines. Invalid music intervals or overlapping caption intervals fail configuration validation.
 
-While the gem remains in `GEM_IDLE`, the small hand tap cue stays hidden for `gemHint.delay` seconds. It is positioned as a lightweight HTML overlay near the projected gem, with a restrained tap/ripple animation. A gem interaction removes it immediately; clicking before the delay never shows it.
+While the gem remains in `GEM_IDLE`, the premium hand tap cue stays hidden for `gemHint.delay` seconds. It is positioned as a lightweight HTML overlay centered beneath the projected gem with a soft tap cycle, delicate fingertip ripples, and an elegant label cue. A gem interaction removes it immediately; clicking before the delay never shows it.
 
 ## Ownership and synchronization
 

@@ -38,10 +38,26 @@ export class GemInteractionHint {
     this.element.className = 'gem-interaction-hint';
     this.element.setAttribute('aria-hidden', 'true');
     this.element.innerHTML = `
-      <span class="gem-interaction-hint__ripple" aria-hidden="true"></span>
-      <svg class="gem-interaction-hint__icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M8.5 13.2V5.7a1.45 1.45 0 0 1 2.9 0v4.1V4.9a1.45 1.45 0 0 1 2.9 0v4.9V5.8a1.45 1.45 0 0 1 2.9 0v6.1l.55-.55a1.45 1.45 0 0 1 2.05 2.05l-4.2 4.2a3.4 3.4 0 0 1-2.4 1H9.8a3.4 3.4 0 0 1-2.4-1l-2.55-2.55a1.45 1.45 0 0 1 2.05-2.05l1.6 1.6v-1.4Z" />
-      </svg>
+      <div class="gem-interaction-hint__gesture" aria-hidden="true">
+        <div class="gem-interaction-hint__ripple-anchor" aria-hidden="true">
+          <span class="gem-interaction-hint__ripple gem-interaction-hint__ripple--1" aria-hidden="true"></span>
+          <span class="gem-interaction-hint__ripple gem-interaction-hint__ripple--2" aria-hidden="true"></span>
+        </div>
+        <div class="gem-interaction-hint__icon-wrap" aria-hidden="true">
+          <svg class="gem-interaction-hint__icon" viewBox="0 0 26 34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M10.2 4C10.2 2.45 11.45 1.2 13 1.2C14.55 1.2 15.8 2.45 15.8 4V15.2C16.6 14.4 17.7 14 18.8 14.2C20.2 14.5 21.1 15.7 21.1 17.1V18.2C21.8 18 22.7 18.3 23.3 18.9C24.1 19.7 24.3 20.9 23.9 22L23.1 24.2C23.8 25.1 23.9 26.3 23.4 27.3C22.7 28.7 21.5 29.8 20 30.3L19.1 30.6C17.1 31.3 14.9 31.5 12.8 31.1C10.3 30.6 8.1 29.2 6.7 27.1L4.8 24.2C4 23 4.2 21.4 5.3 20.3C6.4 19.3 8.1 19.3 9.1 20.3L10.2 21.6V4Z"
+              fill="url(#gem-hint-hand-grad)" stroke="rgba(255, 255, 255, 0.85)" stroke-width="0.8" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="gem-hint-hand-grad" x1="13" y1="1" x2="13" y2="32" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#ffffff"/>
+                <stop offset="0.75" stop-color="#fdf1f5"/>
+                <stop offset="1" stop-color="#f6dfe6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      </div>
+      <span class="gem-interaction-hint__label" aria-hidden="true">Chạm vào viên ngọc</span>
     `;
     container.append(this.element);
   }

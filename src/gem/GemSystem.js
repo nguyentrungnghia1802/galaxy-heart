@@ -2,6 +2,7 @@ import { MUSIC_REVEAL_CONFIG } from '../config/musicReveal.js';
 import * as THREE from 'three';
 import { clamp, lerp } from '../utils/math.js';
 import { GemBurst } from './GemBurst.js';
+import { GemHeartStream } from './GemHeartStream.js';
 
 const ORBIT_SPARKLE_COUNT = 6;
 
@@ -158,6 +159,10 @@ export class GemSystem {
     this.gemBurst = new GemBurst({ seed: options.seed });
     this.group.add(this.gemBurst.group);
 
+    // 9. Floating Heart Stream FX (Multiple waves of floating hearts upon gem click)
+    this.heartStream = new GemHeartStream({ seed: options.seed });
+    this.group.add(this.heartStream.group);
+
     // Initial state
     this.group.visible = true;
   }
@@ -166,12 +171,17 @@ export class GemSystem {
     this.isHovered = Boolean(hovered);
   }
 
+  triggerHeartStream(camera = null) {
+    this.heartStream.trigger();
+  }
+
   triggerBurst() {
     this.burstFlash = 1.0;
     this.gemBurst.trigger();
+    this.heartStream.trigger();
   }
 
-  update(dt = 0.016, stateSnapshot = {}) {
+  update(dt = 0.016, stateSnapshot = {}, camera = null) {
     this.time += dt;
     const state = stateSnapshot?.state ?? 'BOOT';
     const progress = clamp(stateSnapshot?.progress ?? 0, 0, 1);
@@ -215,6 +225,7 @@ export class GemSystem {
       this.gemLight.intensity = 0;
       this.interactionHintVisible = false;
       this.gemBurst.update(dt);
+      this.heartStream.update(dt, camera);
       return;
     }
 
@@ -336,6 +347,7 @@ export class GemSystem {
 
     // 7. Update Burst FX
     this.gemBurst.update(dt);
+    this.heartStream.update(dt, camera);
   }
 
   reset() {
@@ -361,6 +373,7 @@ export class GemSystem {
     this.hitMesh.visible = true;
     this.gemLight.intensity = 0.25;
     this.gemBurst.reset();
+    this.heartStream.reset();
   }
 
   dispose() {
@@ -380,6 +393,7 @@ export class GemSystem {
     this.hitMesh.material.dispose();
     this.gemLight.dispose();
     this.gemBurst.dispose();
+    this.heartStream.dispose();
     this.group.removeFromParent();
   }
 }

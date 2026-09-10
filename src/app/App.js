@@ -241,6 +241,7 @@ export class App {
     this.gemHint?.hide();
     this.soundSystem.unlock();
     this.musicSystem.arm();
+    this.gemSystem?.triggerHeartStream(this.camera);
     this.stateMachine.triggerGemClick();
     if (this.container.style) this.container.style.cursor = 'default';
   }
@@ -296,7 +297,7 @@ export class App {
     this.stateSnapshot.heartScale = this.heartSystem.getGlobalScale();
     this.stateSnapshot.heartbeatIntensity = this.heartSystem.getIntensity();
     this.petalSystem.update(dt, this.stateSnapshot);
-    this.gemSystem?.update(dt, this.stateSnapshot);
+    this.gemSystem?.update(dt, this.stateSnapshot, this.camera);
     this.gemHint?.update(this.stateSnapshot, this.gemSystem, this.camera);
     this.musicSystem.update();
     if (this.stateMachine.state === 'MUSIC_REVEAL' && this.musicSystem.finished) {

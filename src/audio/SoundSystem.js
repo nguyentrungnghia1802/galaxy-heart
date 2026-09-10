@@ -2,7 +2,7 @@
  * SoundSystem - Minimalist biological cardiac sound director.
  *
  * Focuses exclusively on natural acoustic heartbeat and soft climax release:
- * 1. Natural biological heartbeat (Lub-Dub) with rich tissue harmonics and zero electronic artifacts.
+ * 1. Natural biological heartbeat (Lub-Dub) with rich thoracic resonance and zero electronic artifacts.
  * 2. Synchronized acceleration: slow -> faster -> rapid -> final strong beat.
  * 3. Final heartbeat impact right before explosion.
  * 4. Very soft, quiet low-frequency whoosh/breath on explosion (strictly non-bomb).
@@ -22,17 +22,19 @@ export class SoundSystem {
     this.heartbeatGain = null;
     this.effectsGain = null;
     this.compressor = null;
+    this.effectsCompressor = null;
 
     this.unlocked = false;
     this.muted = false;
-    // Stronger cardiac signal with dedicated peak control; music/effects keep their levels.
-    this.heartbeatVolume = options.volume ?? 1.6;
+    // Dedicated cardiac bus volume; music and caption audio remain completely unaffected.
+    this.heartbeatVolume = options.volume ?? 1.25;
 
-    // Heartbeat pre-rendered acoustic buffers
+    // Heartbeat acoustic buffers
     this.lubBuffer = null;
     this.dubBuffer = null;
     this.finalBeatBuffer = null;
     this.softBurstBuffer = null;
+    this.assetsLoadingPromise = null;
 
     // Heartbeat tracking
     this.lastHeartbeatPhase = -1;
@@ -41,8 +43,10 @@ export class SoundSystem {
     this.finalBeatTriggered = false;
     this.explosionTriggered = false;
 
-    // Active nodes tracking to prevent overlap
+    // Active voice tracking to prevent muddy overlap
     this.activeSources = new Set();
+    this.currentCardiacSource = null;
+    this.currentCardiacGain = null;
 
     if (options.autoInit && this.audioContextClass) {
       this.ensureContext();
@@ -65,7 +69,7 @@ export class SoundSystem {
       this.effectsCompressor.release.setValueAtTime(0.08, this.ctx.currentTime);
       this.effectsCompressor.connect(this.ctx.destination);
 
-      // Cardiac-only limiter: quicker attack and lower threshold retain transient headroom.
+      // Dedicated cardiac limiter: retains full transient punch without distortion or clipping.
       this.compressor = this.ctx.createDynamicsCompressor();
       this.compressor.threshold.setValueAtTime(-8, this.ctx.currentTime);
       this.compressor.knee.setValueAtTime(6, this.ctx.currentTime);
@@ -74,7 +78,7 @@ export class SoundSystem {
       this.compressor.release.setValueAtTime(0.08, this.ctx.currentTime);
       this.compressor.connect(this.ctx.destination);
 
-      // Heartbeat Gain Node with smooth transition
+      // Heartbeat Gain Node (independent dedicated path)
       this.heartbeatGain = this.ctx.createGain();
       this.heartbeatGain.gain.setValueAtTime(
         this.muted ? 0 : this.heartbeatVolume,
@@ -82,13 +86,16 @@ export class SoundSystem {
       );
       this.heartbeatGain.connect(this.compressor);
 
-      // Preserve the explosion level independently of the stronger heartbeat bus.
+      // Preserve explosion level independently
       this.effectsGain = this.ctx.createGain();
       this.effectsGain.gain.setValueAtTime(this.muted ? 0 : 1, this.ctx.currentTime);
       this.effectsGain.connect(this.effectsCompressor);
 
-      // Pre-render acoustic buffers
+      // Pre-render acoustic buffers for immediate offline/test availability
       this.buildAcousticBuffers();
+
+      // Asynchronously load studio-mastered audio assets if in browser environment
+      this.assetsLoadingPromise = this.loadHeartbeatAssets();
 
       return this.ctx;
     } catch {
@@ -97,8 +104,49 @@ export class SoundSystem {
   }
 
   /**
+   * Loads studio-mastered WAV assets from public/assets/audio/
+   * Falls back gracefully to the procedural acoustic buffers if offline or unsupported.
+   */
+  async loadHeartbeatAssets() {
+    if (
+      !this.ctx ||
+      typeof fetch !== 'function' ||
+      typeof this.ctx.decodeAudioData !== 'function'
+    ) {
+      return;
+    }
+
+    const baseUrl =
+      typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL
+        ? import.meta.env.BASE_URL
+        : '/';
+
+    const assets = [
+      { key: 'lubBuffer', url: `${baseUrl}assets/audio/heartbeat-lub.wav` },
+      { key: 'dubBuffer', url: `${baseUrl}assets/audio/heartbeat-dub.wav` },
+      { key: 'finalBeatBuffer', url: `${baseUrl}assets/audio/heartbeat-final.wav` },
+    ];
+
+    await Promise.all(
+      assets.map(async ({ key, url }) => {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) return;
+          const arrayBuffer = await res.arrayBuffer();
+          const decoded = await this.ctx.decodeAudioData(arrayBuffer);
+          if (decoded) {
+            this[key] = decoded;
+          }
+        } catch {
+          // Graceful fallback: retain procedural buffer
+        }
+      }),
+    );
+  }
+
+  /**
    * Generates organic acoustic waveforms modeled after biological cardiac valve closures.
-   * Uses smooth windowing to guarantee 0 clicks, 0 pops, and 0 electronic harshness.
+   * Features natural thoracic resonance (56-130Hz) and zero electronic artifacts.
    */
   buildAcousticBuffers() {
     if (!this.ctx || typeof this.ctx.createBuffer !== 'function') return;
@@ -106,47 +154,50 @@ export class SoundSystem {
     const sampleRate = this.ctx.sampleRate || 44100;
 
     // 1. Primary Beat (Lub - S1): Warm, deep, full myocardial contraction.
-    // Settles naturally from 58Hz down to 44Hz with warm tissue harmonics (2nd & 3rd).
+    // Settles naturally from 102Hz down to 56Hz with warm tissue harmonics.
     this.lubBuffer = this.renderCardiacBuffer({
       sampleRate,
-      duration: 0.18,
-      startFreq: 58,
-      endFreq: 44,
-      attackTime: 0.020,
-      decayTau: 0.046,
-      bodyRatio: 0.35,
-      thirdHarmonicRatio: 0.15,
-      amplitude: 0.95,
+      duration: 0.22,
+      startFreq: 102,
+      endFreq: 56,
+      attackTime: 0.018,
+      decayTau: 0.082,
+      bodyRatio: 0.52,
+      thirdHarmonicRatio: 0.22,
+      subBassRatio: 0.35,
+      amplitude: 0.933,
     });
 
     // 2. Secondary Beat (Dub - S2): Crisp, shorter aortic/pulmonary valve closure.
-    // Settles naturally from 75Hz down to 60Hz.
+    // Settles naturally from 128Hz down to 72Hz.
     this.dubBuffer = this.renderCardiacBuffer({
       sampleRate,
-      duration: 0.14,
-      startFreq: 75,
-      endFreq: 60,
-      attackTime: 0.016,
-      decayTau: 0.034,
-      bodyRatio: 0.28,
-      thirdHarmonicRatio: 0.12,
-      amplitude: 0.85,
+      duration: 0.17,
+      startFreq: 128,
+      endFreq: 72,
+      attackTime: 0.015,
+      decayTau: 0.062,
+      bodyRatio: 0.45,
+      thirdHarmonicRatio: 0.18,
+      subBassRatio: 0.25,
+      amplitude: 0.933,
     });
 
     // 3. Final Strong Beat: Deep, resonant diastolic surge right before explosion.
     this.finalBeatBuffer = this.renderCardiacBuffer({
       sampleRate,
-      duration: 0.24,
-      startFreq: 54,
-      endFreq: 38,
-      attackTime: 0.024,
-      decayTau: 0.062,
-      bodyRatio: 0.42,
-      thirdHarmonicRatio: 0.20,
-      amplitude: 0.98,
+      duration: 0.32,
+      startFreq: 94,
+      endFreq: 48,
+      attackTime: 0.022,
+      decayTau: 0.105,
+      bodyRatio: 0.58,
+      thirdHarmonicRatio: 0.26,
+      subBassRatio: 0.40,
+      amplitude: 0.933,
     });
 
-    // 4. Soft Explosion Release: Very brief, quiet sub-bass exhale + whisper of air (non-bomb)
+    // 4. Soft Explosion Release: Quiet sub-bass exhale + gentle whisper of air (non-bomb)
     this.softBurstBuffer = this.renderSoftBurstBuffer(sampleRate, 0.55);
   }
 
@@ -158,31 +209,33 @@ export class SoundSystem {
     attackTime,
     decayTau,
     bodyRatio,
-    thirdHarmonicRatio = 0.12,
-    amplitude,
+    thirdHarmonicRatio = 0.22,
+    subBassRatio = 0.35,
+    amplitude = 0.933,
   }) {
     const totalSamples = Math.floor(sampleRate * duration);
     const buffer = this.ctx.createBuffer(1, totalSamples, sampleRate);
     const data = buffer.getChannelData(0);
 
     let phaseAcc = 0;
-    const normFactor = 1.0 / (1.0 + bodyRatio + thirdHarmonicRatio);
+    let maxAbs = 0;
 
     for (let i = 0; i < totalSamples; i += 1) {
       const t = i / sampleRate;
       const progress = t / duration;
 
-      // Natural acoustic pitch settle
-      const freq = startFreq + (endFreq - startFreq) * Math.pow(progress, 0.7);
+      // Natural acoustic pitch glide
+      const freq = startFreq + (endFreq - startFreq) * Math.pow(progress, 0.65);
       phaseAcc += (2 * Math.PI * freq) / sampleRate;
 
-      // Fundamental wave + warm myocardial tissue harmonics (2nd & 3rd)
+      // Multi-harmonic myocardial acoustics
       const fundamental = Math.sin(phaseAcc);
       const tissueHarmonic2 = Math.sin(phaseAcc * 2.0 + 0.25) * bodyRatio;
       const tissueHarmonic3 = Math.sin(phaseAcc * 3.0 + 0.50) * thirdHarmonicRatio;
-      const rawWave = fundamental + tissueHarmonic2 + tissueHarmonic3;
+      const subBass = Math.sin(phaseAcc * 0.5 + 0.1) * subBassRatio * (1 - progress);
+      const rawWave = fundamental + tissueHarmonic2 + tissueHarmonic3 + subBass;
 
-      // Soft rounded attack (sinusoidal) and exponential biological decay
+      // Smooth sinusoidal attack and exponential biological decay
       let env = 0;
       if (t < attackTime) {
         env = Math.sin((Math.PI * 0.5) * (t / attackTime));
@@ -190,14 +243,25 @@ export class SoundSystem {
         env = Math.exp(-(t - attackTime) / decayTau);
       }
 
-      // Smooth taper at tail to guarantee zero DC offset or click
-      const tailSamples = Math.floor(sampleRate * 0.015);
+      // Cosine taper at the tail (zero DC offset, zero clicks)
+      const tailSamples = Math.floor(sampleRate * 0.025);
       if (i > totalSamples - tailSamples) {
         const tailP = (totalSamples - i) / tailSamples;
-        env *= tailP;
+        env *= 0.5 * (1 - Math.cos(Math.PI * tailP));
       }
 
-      data[i] = rawWave * normFactor * env * amplitude;
+      const sampleVal = rawWave * env;
+      data[i] = sampleVal;
+      const absVal = Math.abs(sampleVal);
+      if (absVal > maxAbs) {
+        maxAbs = absVal;
+      }
+    }
+
+    if (maxAbs > 0.0001) {
+      for (let i = 0; i < totalSamples; i += 1) {
+        data[i] = (data[i] / maxAbs) * amplitude;
+      }
     }
 
     return buffer;
@@ -257,6 +321,10 @@ export class SoundSystem {
       }
     }
     this.unlocked = true;
+
+    if (!this.assetsLoadingPromise) {
+      this.assetsLoadingPromise = this.loadHeartbeatAssets();
+    }
   }
 
   isMuted() {
@@ -279,6 +347,21 @@ export class SoundSystem {
     if (!this.ctx || !buffer || this.muted) return;
 
     const now = this.ctx.currentTime;
+
+    // Smooth voice limiting for cardiac sounds to prevent low-frequency overlap and mud
+    if (output === this.heartbeatGain && this.currentCardiacGain && this.currentCardiacSource) {
+      try {
+        const prevGain = this.currentCardiacGain;
+        const prevSource = this.currentCardiacSource;
+        prevGain.gain.cancelScheduledValues(now);
+        prevGain.gain.setValueAtTime(prevGain.gain.value, now);
+        prevGain.gain.linearRampToValueAtTime(0.001, now + 0.035);
+        prevSource.stop(now + 0.04);
+      } catch {
+        // Safe ignore
+      }
+    }
+
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
 
@@ -288,9 +371,18 @@ export class SoundSystem {
     source.connect(gain);
     gain.connect(output);
 
+    if (output === this.heartbeatGain) {
+      this.currentCardiacGain = gain;
+      this.currentCardiacSource = source;
+    }
+
     this.activeSources.add(source);
     source.onended = () => {
       this.activeSources.delete(source);
+      if (this.currentCardiacSource === source) {
+        this.currentCardiacSource = null;
+        this.currentCardiacGain = null;
+      }
       try {
         source.disconnect();
         gain.disconnect();
@@ -303,21 +395,22 @@ export class SoundSystem {
   }
 
   // --------------------------------------------------------------------------
-  // Biological Heartbeat Pulses (~5x louder, warm organic myocardial presence)
+  // Biological Heartbeat Pulses (natural acoustic presence, warm chest resonance)
   // --------------------------------------------------------------------------
   playHeartbeat(intensity = 0.5, isRapid = false, isDub = false) {
     const buffer = isDub ? this.dubBuffer : this.lubBuffer;
     if (!buffer) return;
 
-    // Rich presence scaling
-    const baseVol = isDub ? 0.70 : 0.95;
-    const volume = Math.min(1.10, baseVol + intensity * 0.15);
+    // Natural dynamics: Lub is slightly rounder, Dub is crisper
+    const baseVol = isDub ? 0.88 : 1.0;
+    const volume = Math.min(1.15, baseVol + intensity * 0.1);
     this.playBuffer(buffer, volume);
   }
 
   playFinalBeat() {
     if (!this.finalBeatBuffer) return;
-    this.playBuffer(this.finalBeatBuffer, 1.05);
+    // Stronger impact right before explosion without abrupt volume jump
+    this.playBuffer(this.finalBeatBuffer, 1.15);
   }
 
   playSoftExplosion() {
@@ -397,6 +490,8 @@ export class SoundSystem {
     this.dubTriggered = false;
     this.finalBeatTriggered = false;
     this.explosionTriggered = false;
+    this.currentCardiacGain = null;
+    this.currentCardiacSource = null;
 
     // Stop active sources on reset
     this.activeSources.forEach((source) => {
@@ -421,5 +516,3 @@ export class SoundSystem {
     }
   }
 }
-
-

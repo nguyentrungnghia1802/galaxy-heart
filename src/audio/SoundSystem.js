@@ -19,13 +19,13 @@ export class SoundSystem {
         : null);
 
     this.ctx = null;
-    this.masterGain = null;
+    this.heartbeatGain = null;
     this.compressor = null;
 
     this.unlocked = false;
     this.muted = false;
-    // Enhanced master volume (1.0) for ~5x perceived acoustic presence
-    this.masterVolume = options.volume ?? 1.0;
+    // Heartbeat volume (1.0) for ~5x perceived acoustic presence
+    this.heartbeatVolume = options.volume ?? 1.0;
 
     // Heartbeat pre-rendered acoustic buffers
     this.lubBuffer = null;
@@ -64,13 +64,13 @@ export class SoundSystem {
       this.compressor.release.setValueAtTime(0.08, this.ctx.currentTime);
       this.compressor.connect(this.ctx.destination);
 
-      // Master Gain Node with smooth transition
-      this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(
-        this.muted ? 0 : this.masterVolume,
+      // Heartbeat Gain Node with smooth transition
+      this.heartbeatGain = this.ctx.createGain();
+      this.heartbeatGain.gain.setValueAtTime(
+        this.muted ? 0 : this.heartbeatVolume,
         this.ctx.currentTime,
       );
-      this.masterGain.connect(this.compressor);
+      this.heartbeatGain.connect(this.compressor);
 
       // Pre-render acoustic buffers
       this.buildAcousticBuffers();
@@ -250,11 +250,11 @@ export class SoundSystem {
 
   setMuted(muted) {
     this.muted = Boolean(muted);
-    if (this.ctx && this.masterGain) {
+    if (this.ctx && this.heartbeatGain) {
       const now = this.ctx.currentTime;
-      const targetGain = this.muted ? 0 : this.masterVolume;
-      this.masterGain.gain.cancelScheduledValues(now);
-      this.masterGain.gain.linearRampToValueAtTime(targetGain, now + 0.04);
+      const targetGain = this.muted ? 0 : this.heartbeatVolume;
+      this.heartbeatGain.gain.cancelScheduledValues(now);
+      this.heartbeatGain.gain.linearRampToValueAtTime(targetGain, now + 0.04);
     }
   }
 
@@ -269,7 +269,7 @@ export class SoundSystem {
     gain.gain.setValueAtTime(Math.max(0.001, volume), now);
 
     source.connect(gain);
-    gain.connect(this.masterGain);
+    gain.connect(this.heartbeatGain);
 
     this.activeSources.add(source);
     source.onended = () => {

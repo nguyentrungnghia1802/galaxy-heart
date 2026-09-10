@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MusicSystem } from '../src/music/MusicSystem.js';
 import { SoundSystem } from '../src/audio/SoundSystem.js';
 
 class MockAudioParam {
@@ -41,6 +42,7 @@ class MockAudioContext {
   state = 'suspended';
   destination = new MockAudioNode();
 
+  createMediaElementSource = vi.fn(() => new MockAudioNode());
   createGain = vi.fn(() => new MockGainNode());
   createBufferSource = vi.fn(() => new MockBufferSourceNode());
   createDynamicsCompressor = vi.fn(() => new MockDynamicsCompressorNode());
@@ -68,6 +70,34 @@ describe('SoundSystem', () => {
       clear: vi.fn(() => store.clear()),
     };
   };
+
+  it('routes music through its own gain in the existing context without changing heartbeat gain', async () => {
+    const sound = new SoundSystem({ AudioContext: MockAudioContext, autoInit: true });
+    class Media extends EventTarget {
+      currentTime = 0; duration = 60; readyState = 1; paused = true;
+      load() {} removeAttribute() {} pause() { this.paused = true; }
+      play() { this.paused = false; return Promise.resolve(); }
+    }
+    const music = new MusicSystem({ src: 'test-only' }, {
+      createAudio: () => new Media(), getContext: () => sound.ensureContext(),
+    });
+    await music.arm();
+    await music.begin();
+    music.setVolume(0.2);
+    music.fadeTo(0.1, 1);
+    expect(music.ctx).toBe(sound.ctx);
+    expect(music.musicGain).not.toBe(sound.heartbeatGain);
+    expect(music.musicGain.connect).toHaveBeenCalledWith(sound.ctx.destination);
+    expect(sound.heartbeatGain.connect).toHaveBeenCalledWith(sound.compressor);
+    expect(sound.heartbeatGain.gain.setValueAtTime).toHaveBeenCalledTimes(1);
+    expect(sound.heartbeatGain.gain.linearRampToValueAtTime).not.toHaveBeenCalled();
+    const musicChanges = music.musicGain.gain.linearRampToValueAtTime.mock.calls.length;
+    sound.setMuted(true);
+    expect(music.musicGain.gain.linearRampToValueAtTime).toHaveBeenCalledTimes(musicChanges);
+    music.dispose();
+    expect(sound.ctx.close).not.toHaveBeenCalled();
+    sound.dispose();
+  });
 
   it('instantiates safely without AudioContext in headless environment', () => {
     const sound = new SoundSystem({ AudioContext: null });
@@ -238,14 +268,14 @@ describe('SoundSystem', () => {
     sound.dispose();
   });
 
-  it('configures master volume to 1.0 and limiter with protective headroom', async () => {
+  it('configures heartbeat volume to 1.0 and limiter with protective headroom', async () => {
     const sound = new SoundSystem({
       AudioContext: MockAudioContext,
       autoInit: true,
     });
     await sound.unlock();
 
-    expect(sound.masterVolume).toBe(1.0);
+    expect(sound.heartbeatVolume).toBe(1.0);
     expect(sound.compressor).toBeDefined();
     expect(sound.compressor.threshold.setValueAtTime).toHaveBeenCalledWith(-2.5, 0.5);
     expect(sound.compressor.ratio.setValueAtTime).toHaveBeenCalledWith(12, 0.5);

@@ -1,3 +1,4 @@
+import { MUSIC_REVEAL_CONFIG } from '../config/musicReveal.js';
 import * as THREE from 'three';
 import { clamp, lerp } from '../utils/math.js';
 import { GemBurst } from './GemBurst.js';
@@ -30,6 +31,7 @@ export class GemSystem {
     this.basePosition = new THREE.Vector3(0, 0.05, 0);
     this.group.position.copy(this.basePosition);
 
+    this.activation = options.activation ?? MUSIC_REVEAL_CONFIG.activation;
     this.hoverFactor = 0;
     this.isHovered = false;
     this.time = 0;
@@ -171,9 +173,9 @@ export class GemSystem {
     const isExploded =
       state === 'PETAL_FLIGHT' ||
       state === 'GEM_IDLE' ||
-      state === 'GEM_BURST' ||
-      state === 'LOVE_REVEAL' ||
-      state === 'END';
+      state === 'GEM_ACTIVATION' ||
+      state === 'MUSIC_REVEAL' ||
+      state === 'FINAL';
 
     const isHeartIntact =
       state === 'BOOT' ||
@@ -197,7 +199,7 @@ export class GemSystem {
     }
 
     // Disappearance logic: after gem activation, gem dissolves and vanishes completely
-    if (state === 'LOVE_REVEAL' || state === 'END') {
+    if (state === 'MUSIC_REVEAL' || state === 'FINAL') {
       this.innerMesh.visible = false;
       this.outerMesh.visible = false;
       this.haloMesh.visible = false;
@@ -229,23 +231,14 @@ export class GemSystem {
       disappearAlpha = emergeProgress;
     }
 
-    if (state === 'GEM_BURST') {
-      // Gentle activation pulse, then smooth prompt shrink and fade to zero
-      const dissolveProgress = clamp((progress - 0.05) / 0.45, 0, 1);
-      disappearScale = Math.max(0, 1 - Math.pow(dissolveProgress, 1.4));
-      disappearAlpha = Math.max(0, 1 - Math.pow(dissolveProgress, 1.1));
-
-      if (progress >= 0.55) {
-        this.innerMesh.visible = false;
-        this.outerMesh.visible = false;
-        this.haloMesh.visible = false;
-        this.rippleMesh.visible = false;
-        this.orbitPoints.visible = false;
-        this.hitMesh.visible = false;
-        this.gemLight.intensity = 0;
-        this.gemBurst.update(dt);
-        return;
-      }
+    if (state === 'GEM_ACTIVATION') {
+      const pulse = this.activation.pulseFraction;
+      const fade = clamp((progress - pulse) / (1 - pulse), 0, 1);
+      const eased = fade * fade * (3 - 2 * fade);
+      const activationScale = 1 + this.activation.pulseScale *
+        Math.sin(Math.PI * Math.min(1, progress / pulse));
+      disappearScale = activationScale * (1 - eased);
+      disappearAlpha = 1 - eased;
     }
 
     // Ensure elements are visible during pre-dissolve states
@@ -253,7 +246,7 @@ export class GemSystem {
     this.outerMesh.visible = true;
     this.haloMesh.visible = false;
     this.orbitPoints.visible = true;
-    this.hitMesh.visible = true;
+    this.hitMesh.visible = state === 'GEM_IDLE';
 
     // 1. Smooth hover transition (fast in, smooth out)
     const targetHover = this.isHovered ? 1.0 : 0.0;

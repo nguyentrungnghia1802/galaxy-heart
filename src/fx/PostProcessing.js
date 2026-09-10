@@ -77,9 +77,9 @@ export class PostProcessing {
       targetStrength = this.baseStrength * flightFactor;
     } else if (
       state === 'GEM_IDLE' ||
-      state === 'GEM_BURST' ||
-      state === 'LOVE_REVEAL' ||
-      state === 'END'
+      state === 'GEM_ACTIVATION' ||
+      state === 'MUSIC_REVEAL' ||
+      state === 'FINAL'
     ) {
       // Subdued bloom for clean, elegant crystal facets and crisp non-neon typography
       targetStrength = this.baseStrength * 0.25;

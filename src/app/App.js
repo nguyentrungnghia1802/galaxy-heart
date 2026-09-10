@@ -4,7 +4,9 @@ import { createHeartAnchors } from '../heart/HeartSurface.js';
 import { HeartSystem } from '../heart/HeartSystem.js';
 import { PetalSystem } from '../petals/PetalSystem.js';
 import { GemSystem } from '../gem/GemSystem.js';
-import { LoveTextSystem } from '../text/LoveTextSystem.js';
+import { MusicSystem } from '../music/MusicSystem.js';
+import { CaptionRenderer } from '../captions/CaptionRenderer.js';
+import { MUSIC_REVEAL_CONFIG } from '../config/musicReveal.js';
 import { SoundSystem } from '../audio/SoundSystem.js';
 import { PostProcessing } from '../fx/PostProcessing.js';
 import { createScene } from '../scene/createScene.js';
@@ -100,16 +102,31 @@ export class App {
     };
 
     this.gemSystem =
-      options.gemSystem ?? new GemSystem({ seed: options.gemSeed });
+      options.gemSystem ?? new GemSystem({ seed: options.gemSeed, activation: (options.musicConfig ?? MUSIC_REVEAL_CONFIG).activation });
     this.scene.add(this.gemSystem.group);
 
-    this.loveTextSystem =
-      options.loveTextSystem ??
-      new LoveTextSystem({ camera: this.camera });
-    this.scene.add(this.loveTextSystem.group);
-
-    this.soundSystem =
-      options.soundSystem ?? new SoundSystem();
+    this.soundSystem = options.soundSystem ?? new SoundSystem();
+    this.musicConfig = options.musicConfig ?? MUSIC_REVEAL_CONFIG;
+    this.musicSystem = options.musicSystem ?? new MusicSystem(this.musicConfig.music, {
+      getContext: () => this.soundSystem.ensureContext(),
+    });
+    this.captionRenderer = options.captionRenderer ?? new CaptionRenderer(
+      container, this.musicConfig, this.documentTarget,
+    );
+    this.sequenceActivated = false;
+    this.resumeMusic = false;
+    this.musicResumeButton = this.documentTarget?.createElement?.('button');
+    this.handleMusicResume = () => {
+      this.soundSystem.unlock();
+      this.musicSystem.play();
+    };
+    if (this.musicResumeButton) {
+      this.musicResumeButton.className = 'music-resume';
+      this.musicResumeButton.textContent = 'Continue music';
+      this.musicResumeButton.hidden = true;
+      this.musicResumeButton.addEventListener('click', this.handleMusicResume);
+      container.append(this.musicResumeButton);
+    }
 
     this.raycaster = new THREE.Raycaster();
     this.mouseNDC = new THREE.Vector2(-999, -999);
@@ -127,7 +144,7 @@ export class App {
     this.handleResume = this.handleResume.bind(this);
 
     this.stateMachine = new StateMachine({
-      durations: options.durations,
+      durations: { GEM_ACTIVATION: this.musicConfig.activation.duration, ...options.durations },
       onEnter: this.handleStateEnter,
       onExit: this.handleStateExit,
     });
@@ -178,7 +195,7 @@ export class App {
     if (!this.gemSystem?.hitMesh || !this.camera) return;
     this.raycaster.setFromCamera(this.mouseNDC, this.camera);
     const intersects = this.raycaster.intersectObject(this.gemSystem.hitMesh, false);
-    const isHovered = intersects.length > 0;
+    const isHovered = this.stateMachine.state === 'GEM_IDLE' && intersects.length > 0;
     this.gemSystem.setHovered(isHovered);
 
     if (this.container?.style) {
@@ -209,14 +226,12 @@ export class App {
   }
 
   onGemInteracted() {
-    const currentState = this.stateMachine.state;
-    if (
-      currentState === 'GEM_IDLE' ||
-      currentState === 'PETAL_FLIGHT'
-    ) {
-      this.gemSystem.triggerBurst();
-      this.stateMachine.transitionTo('GEM_BURST');
-    }
+    if (this.stateMachine.state !== 'GEM_IDLE' || this.sequenceActivated) return;
+    this.sequenceActivated = true;
+    this.soundSystem.unlock();
+    this.musicSystem.arm();
+    this.stateMachine.triggerGemClick();
+    if (this.container.style) this.container.style.cursor = 'default';
   }
 
   start() {
@@ -271,7 +286,15 @@ export class App {
     this.stateSnapshot.heartbeatIntensity = this.heartSystem.getIntensity();
     this.petalSystem.update(dt, this.stateSnapshot);
     this.gemSystem?.update(dt, this.stateSnapshot);
-    this.loveTextSystem?.update(dt, this.stateSnapshot);
+    this.musicSystem.update();
+    if (this.stateMachine.state === 'MUSIC_REVEAL' && this.musicSystem.finished) {
+      this.stateMachine.completeMusic();
+    }
+    this.captionRenderer.update(this.musicSystem.currentTime,
+      this.stateMachine.state === 'MUSIC_REVEAL' &&
+      ['playing', 'paused'].includes(this.musicSystem.status));
+    if (this.musicResumeButton) this.musicResumeButton.hidden =
+      this.stateMachine.state !== 'MUSIC_REVEAL' || this.musicSystem.status !== 'blocked';
     this.soundSystem?.update(dt, this.stateSnapshot, this.heartSystem);
     this.updatePlaceholderSystems(dt);
     if (this.postProcessing?.enabled) {
@@ -282,7 +305,7 @@ export class App {
     }
     this.updateDebugMetrics(now);
 
-    if (this.stateMachine.state === 'END' && !this.continuousEndLoop) {
+    if (this.stateMachine.state === 'FINAL' && !this.continuousEndLoop) {
       this.running = false;
       return;
     }
@@ -336,7 +359,7 @@ export class App {
     if (typeof drawCalls === 'number') {
       dataset.drawCalls = String(drawCalls);
     }
-    if (this.stateMachine.state === 'END' && now > this.debugStartedAt) {
+    if (this.stateMachine.state === 'FINAL' && now > this.debugStartedAt) {
       const elapsedSeconds = (now - this.debugStartedAt) / 1_000;
       dataset.averageFps = (
         this.debugFrameCount / elapsedSeconds
@@ -356,19 +379,18 @@ export class App {
       (state === 'EXPLOSION' ||
         state === 'PETAL_FLIGHT' ||
         state === 'GEM_IDLE' ||
-        state === 'GEM_BURST' ||
-        state === 'LOVE_REVEAL' ||
-        state === 'END') &&
+        state === 'GEM_ACTIVATION' ||
+        state === 'MUSIC_REVEAL' ||
+        state === 'FINAL') &&
       this.petalSystem.explosionCount === 0
     ) {
       this.petalSystem.triggerExplosion(this.stateSnapshot.explosionParams);
     }
-    if (state === 'GEM_BURST') {
-      this.gemSystem?.triggerBurst();
+    if (state === 'GEM_ACTIVATION') {
+      this.sequenceActivated = true;
+      this.gemSystem?.setHovered(false);
     }
-    if (state === 'LOVE_REVEAL' || state === 'END') {
-      this.loveTextSystem?.reveal();
-    }
+    if (state === 'MUSIC_REVEAL') this.musicSystem.begin();
     this.onStateEnter?.(state, previousState);
   }
 
@@ -377,6 +399,9 @@ export class App {
   }
 
   handlePause() {
+    this.resumeMusic = this.musicSystem.begun &&
+      ['playing', 'starting', 'priming'].includes(this.musicSystem.status);
+    if (this.resumeMusic) this.musicSystem.pause();
     if (this.frameId !== null) {
       this.cancelFrame(this.frameId);
       this.frameId = null;
@@ -384,6 +409,8 @@ export class App {
   }
 
   handleResume() {
+    if (this.resumeMusic) this.musicSystem.play();
+    this.resumeMusic = false;
     this.scheduleFrame();
   }
 
@@ -401,7 +428,7 @@ export class App {
   }
 
   replay() {
-    if (this.disposed) {
+    if (this.disposed || this.sequenceActivated) {
       return;
     }
 
@@ -411,7 +438,7 @@ export class App {
     this.heartSystem.reset();
     this.petalSystem.reset();
     this.gemSystem?.reset();
-    this.loveTextSystem?.reset();
+    this.captionRenderer.update(0, false);
     this.soundSystem?.reset();
     this.lightingSystem?.reset();
     this.cameraSystem?.reset();
@@ -446,7 +473,10 @@ export class App {
       this.replayButton?.removeEventListener?.('click', this.handleReplay);
     }
     this.gemSystem?.dispose();
-    this.loveTextSystem?.dispose();
+    this.musicResumeButton?.removeEventListener('click', this.handleMusicResume);
+    this.musicResumeButton?.remove();
+    this.captionRenderer.dispose();
+    this.musicSystem.dispose();
     this.soundSystem?.dispose();
     this.petalSystem.dispose();
     this.postProcessing?.dispose();

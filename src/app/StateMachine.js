@@ -1,3 +1,4 @@
+import { MUSIC_REVEAL_CONFIG } from '../config/musicReveal.js';
 import { clamp } from '../utils/math.js';
 
 export const CINEMATIC_STATES = Object.freeze([
@@ -11,9 +12,9 @@ export const CINEMATIC_STATES = Object.freeze([
   'EXPLOSION',
   'PETAL_FLIGHT',
   'GEM_IDLE',
-  'GEM_BURST',
-  'LOVE_REVEAL',
-  'END',
+  'GEM_ACTIVATION',
+  'MUSIC_REVEAL',
+  'FINAL',
 ]);
 
 export const DEFAULT_STATE_DURATIONS = Object.freeze({
@@ -27,9 +28,9 @@ export const DEFAULT_STATE_DURATIONS = Object.freeze({
   EXPLOSION: 0.45,
   PETAL_FLIGHT: 2.8,
   GEM_IDLE: Number.POSITIVE_INFINITY,
-  GEM_BURST: 1.2,
-  LOVE_REVEAL: 2.2,
-  END: Number.POSITIVE_INFINITY,
+  GEM_ACTIVATION: MUSIC_REVEAL_CONFIG.activation.duration,
+  MUSIC_REVEAL: Number.POSITIVE_INFINITY,
+  FINAL: Number.POSITIVE_INFINITY,
 });
 
 export class StateMachine {
@@ -37,7 +38,7 @@ export class StateMachine {
     this.durations = Object.freeze({
       ...DEFAULT_STATE_DURATIONS,
       ...config.durations,
-      END: Number.POSITIVE_INFINITY,
+      FINAL: Number.POSITIVE_INFINITY,
     });
     this.onEnter = config.onEnter ?? null;
     this.onExit = config.onExit ?? null;
@@ -54,7 +55,7 @@ export class StateMachine {
   get progress() {
     const duration = this.durations[this.state];
     if (!Number.isFinite(duration)) {
-      return this.state === 'END' ? 1 : 0;
+      return this.state === 'FINAL' ? 1 : 0;
     }
     if (duration <= 0) {
       return this.started ? 1 : 0;
@@ -72,14 +73,14 @@ export class StateMachine {
   }
 
   update(dt) {
-    if (!this.started || this.state === 'END') {
+    if (!this.started || this.state === 'FINAL') {
       return;
     }
 
     let remaining = Math.max(0, Number.isFinite(dt) ? dt : 0);
     this.totalElapsed += remaining;
 
-    while (this.state !== 'END') {
+    while (this.state !== 'FINAL') {
       const duration = Math.max(0, this.durations[this.state]);
       const timeToBoundary = Math.max(0, duration - this.elapsed);
 
@@ -133,9 +134,13 @@ export class StateMachine {
     this.onEnter?.(targetState, previousState);
   }
 
+  completeMusic() {
+    if (this.state === 'MUSIC_REVEAL') this.advanceState();
+  }
+
   triggerGemClick() {
-    if (this.state === 'GEM_IDLE' || this.state === 'PETAL_FLIGHT') {
-      this.transitionTo('GEM_BURST');
+    if (this.state === 'GEM_IDLE') {
+      this.transitionTo('GEM_ACTIVATION');
     }
   }
 }

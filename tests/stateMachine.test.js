@@ -10,7 +10,7 @@ function createFastDurations(duration = 1) {
   return Object.fromEntries(
     CINEMATIC_STATES.map((state) => [
       state,
-      state === 'END' ? Number.POSITIVE_INFINITY : duration,
+      state === 'FINAL' ? Number.POSITIVE_INFINITY : duration,
     ]),
   );
 }
@@ -64,14 +64,14 @@ describe('StateMachine', () => {
     expect(machine.progress).toBe(0.25);
   });
 
-  it('keeps END stable until reset', () => {
+  it('keeps FINAL stable until reset', () => {
     const machine = new StateMachine({ durations: createFastDurations(0.01) });
     machine.start();
     machine.update(10);
 
-    expect(machine.state).toBe('END');
+    expect(machine.state).toBe('FINAL');
     machine.update(10_000);
-    expect(machine.state).toBe('END');
+    expect(machine.state).toBe('FINAL');
     expect(machine.progress).toBe(1);
   });
 
@@ -90,7 +90,7 @@ describe('StateMachine', () => {
     expect(machine.state).toBe('BOOT');
   });
 
-  it('simulates the default cinematic through GEM_IDLE and user click into END', () => {
+  it('simulates the default cinematic through GEM_IDLE and user click into FINAL', () => {
     const machine = new StateMachine();
     machine.start();
     const preIdleDuration =
@@ -107,14 +107,12 @@ describe('StateMachine', () => {
 
     // Trigger user click on gem
     machine.triggerGemClick();
-    expect(machine.state).toBe('GEM_BURST');
+    expect(machine.state).toBe('GEM_ACTIVATION');
 
-    const postBurstDuration =
-      DEFAULT_STATE_DURATIONS.GEM_BURST +
-      DEFAULT_STATE_DURATIONS.LOVE_REVEAL;
-
-    machine.update(postBurstDuration);
-    expect(machine.state).toBe('END');
+    machine.update(DEFAULT_STATE_DURATIONS.GEM_ACTIVATION + 100);
+    expect(machine.state).toBe('MUSIC_REVEAL');
+    machine.completeMusic();
+    expect(machine.state).toBe('FINAL');
   });
 
   it('allows manual transitionTo between valid states', () => {
@@ -123,7 +121,7 @@ describe('StateMachine', () => {
     machine.transitionTo('GEM_IDLE');
     expect(machine.state).toBe('GEM_IDLE');
     machine.triggerGemClick();
-    expect(machine.state).toBe('GEM_BURST');
+    expect(machine.state).toBe('GEM_ACTIVATION');
   });
 });
 

@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+const AMBIENT_FLIGHT_PARAMS = Object.freeze({ gravity: 0, drag: 3, windStrength: 0, maxDistance: Infinity });
+
 import { createSeededRandom } from '../utils/random.js';
 import { PetalBuffers } from './PetalBuffers.js';
 import { createPetalGeometry } from './PetalGeometry.js';
@@ -54,6 +56,10 @@ export class PetalSystem {
     this.seed = seed;
     this.flutterEnabled = flutterEnabled;
     this.buffers = new PetalBuffers(count);
+    this.ambientOrigin = new Float32Array(count * 3);
+    this.ambientVelocity = new Float32Array(count * 3);
+    this.ambientAngularVelocity = new Float32Array(count * 3);
+    this.ambientTime = null;
     this.geometry = geometry ?? createPetalGeometry();
     this.material =
       material ??
@@ -204,6 +210,7 @@ export class PetalSystem {
       this.mesh.setColorAt(index, this.tempColor);
     }
 
+    this.ambientTime = null;
     this.buffers.resetDynamics();
     this.attached = true;
     this.mode = 'attached';
@@ -355,9 +362,9 @@ export class PetalSystem {
       // If jumping or entering post-flight states directly, ensure flight is advanced to dispersed state
       if (
         (state === 'GEM_IDLE' ||
-          state === 'GEM_BURST' ||
-          state === 'LOVE_REVEAL' ||
-          state === 'END') &&
+          state === 'GEM_ACTIVATION' ||
+          state === 'MUSIC_REVEAL' ||
+          state === 'FINAL') &&
         this.flightTime < 2.5
       ) {
         const jumpDt = 2.5 - this.flightTime;
@@ -368,6 +375,11 @@ export class PetalSystem {
           stateSnapshot?.flightParams,
         );
         this.flightTime = 2.5;
+      }
+      if (['GEM_IDLE', 'GEM_ACTIVATION', 'MUSIC_REVEAL', 'FINAL'].includes(state)) {
+        this.updateAmbient(dt);
+        this.previousState = state;
+        return;
       }
       const integratedDt = integratePetalFlight(
         this.buffers,
@@ -380,6 +392,38 @@ export class PetalSystem {
     }
 
     this.previousState = state;
+  }
+
+  // Settle the same dispersed instances into bounded drift, preserving entry positions.
+  // No particle recycling, scene replacement, or accumulating long-track displacement.
+  updateAmbient(dt) {
+    if (this.ambientTime === null) {
+      this.ambientOrigin.set(this.buffers.position);
+      this.ambientVelocity.set(this.buffers.velocity);
+      this.ambientAngularVelocity.set(this.buffers.angularVelocity);
+      this.ambientTime = 0;
+    }
+    const safeDt = Math.max(0, Math.min(0.05, dt));
+    this.ambientTime += safeDt;
+    const t = this.ambientTime;
+    const settle = (1 - Math.exp(-3 * t)) / 3;
+    const rotationRate = 0.06 + 0.94 * Math.exp(-2 * t);
+    for (let k = 0; k < this.buffers.angularVelocity.length; k++) {
+      this.buffers.angularVelocity[k] = this.ambientAngularVelocity[k] * rotationRate;
+    }
+    integratePetalFlight(this.buffers, safeDt, t, AMBIENT_FLIGHT_PARAMS);
+    for (let i = 0; i < this.count; i++) {
+      const offset = i * 3;
+      const phase = this.buffers.noiseSeed[i] * Math.PI * 2;
+      for (let axis = 0; axis < 3; axis++) {
+        const k = offset + axis;
+        const p = phase + axis * 1.7;
+        this.buffers.position[k] = this.ambientOrigin[k] +
+          this.ambientVelocity[k] * settle +
+          (Math.sin(t * 0.35 + p) - Math.sin(p)) * 0.12;
+      }
+    }
+    this.updateFlightTransforms();
   }
 
   updateFlightTransforms() {
@@ -422,6 +466,7 @@ export class PetalSystem {
       return;
     }
 
+    this.ambientTime = null;
     this.buffers.resetDynamics();
     this.mode = 'attached';
     this.previousState = null;

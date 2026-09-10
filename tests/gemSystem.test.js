@@ -71,7 +71,7 @@ describe('GemSystem', () => {
     expect(gem.burstFlash).toBe(1.0);
     expect(gem.gemBurst.active).toBe(true);
 
-    gem.update(0.1, { state: 'GEM_BURST' });
+    gem.update(0.1, { state: 'GEM_ACTIVATION' });
     expect(gem.burstFlash).toBeLessThan(1.0);
 
     gem.reset();
@@ -81,7 +81,7 @@ describe('GemSystem', () => {
     gem.dispose();
   });
 
-  it('disappears after activation and remains invisible in LOVE_REVEAL and END', () => {
+  it('disappears after activation and remains invisible in MUSIC_REVEAL and FINAL', () => {
     const gem = new GemSystem();
 
     // In GEM_IDLE, gem is visible
@@ -89,19 +89,19 @@ describe('GemSystem', () => {
     expect(gem.outerMesh.visible).toBe(true);
     expect(gem.innerMesh.visible).toBe(true);
 
-    // During late GEM_BURST, gem meshes dissolve and become invisible
-    gem.update(0.016, { state: 'GEM_BURST', progress: 0.9 });
+    // During late GEM_ACTIVATION, gem meshes dissolve and become invisible
+    gem.update(0.016, { state: 'GEM_ACTIVATION', progress: 0.9 });
+    expect(gem.outerMat.opacity).toBeLessThan(0.05);
+    expect(gem.innerMat.opacity).toBeLessThan(0.05);
+    expect(gem.hitMesh.visible).toBe(false);
+
+    // During MUSIC_REVEAL and FINAL, gem remains completely disappeared
+    gem.update(0.016, { state: 'MUSIC_REVEAL', progress: 0.5 });
     expect(gem.outerMesh.visible).toBe(false);
     expect(gem.innerMesh.visible).toBe(false);
     expect(gem.gemLight.intensity).toBe(0);
 
-    // During LOVE_REVEAL and END, gem remains completely disappeared
-    gem.update(0.016, { state: 'LOVE_REVEAL', progress: 0.5 });
-    expect(gem.outerMesh.visible).toBe(false);
-    expect(gem.innerMesh.visible).toBe(false);
-    expect(gem.gemLight.intensity).toBe(0);
-
-    gem.update(0.016, { state: 'END', progress: 1.0 });
+    gem.update(0.016, { state: 'FINAL', progress: 1.0 });
     expect(gem.outerMesh.visible).toBe(false);
     expect(gem.innerMesh.visible).toBe(false);
 

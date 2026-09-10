@@ -71,8 +71,8 @@ function createFastDurations() {
     EXPLOSION: 0.01,
     PETAL_FLIGHT: 0.03,
     GEM_IDLE: 0.02,
-    GEM_BURST: 0.02,
-    LOVE_REVEAL: 0.02,
+    GEM_ACTIVATION: 0.02,
+    MUSIC_REVEAL: 0.02,
   };
 }
 
@@ -138,7 +138,7 @@ function runToEnd(harness, startTime = 0) {
     now += 16;
     frames += 1;
   }
-  if (frames === 100) throw new Error('Timeline did not reach END.');
+  if (frames === 100) throw new Error('Timeline did not reach FINAL.');
   return now;
 }
 
@@ -206,15 +206,15 @@ describe('App core integration', () => {
       'EXPLOSION',
       'PETAL_FLIGHT',
       'GEM_IDLE',
-      'GEM_BURST',
-      'LOVE_REVEAL',
-      'END',
+      'GEM_ACTIVATION',
+      'MUSIC_REVEAL',
+      'FINAL',
     ]);
-    expect(harness.app.stateMachine.state).toBe('END');
+    expect(harness.app.stateMachine.state).toBe('FINAL');
     expect(harness.app.petalSystem.explosionCount).toBe(1);
     expect(harness.app.petalSystem.mesh).toBe(mesh);
     expect(harness.app.gemSystem).toBeDefined();
-    expect(harness.app.loveTextSystem).toBeDefined();
+    expect(harness.app.captionRenderer).toBeDefined();
     expect(harness.app.soundSystem).toBeDefined();
     expect(harness.replayButton.hidden).toBe(true);
     expect(harness.loadingElement.hidden).toBe(true);
@@ -222,24 +222,23 @@ describe('App core integration', () => {
     harness.app.dispose();
   });
 
-  it('replays ten times without reloading or duplicating scene objects', () => {
+  it('ignores duplicate clicks and replay after activation without duplicating scene objects', () => {
     const harness = createHarness();
     const mesh = harness.app.petalSystem.mesh;
     harness.app.start();
-    let now = runToEnd(harness);
-
-    for (let replay = 0; replay < 10; replay += 1) {
+    harness.app.stateMachine.transitionTo('GEM_IDLE');
+    harness.app.onGemInteracted();
+    harness.app.onGemInteracted();
+    runToEnd(harness);
+    for (let n = 0; n < 10; n++) {
       harness.app.replay();
-      expect(harness.replayButton.hidden).toBe(true);
-      now = runToEnd(harness, now + 1_000);
-      expect(harness.app.stateMachine.state).toBe('END');
-      expect(harness.app.petalSystem.explosionCount).toBe(1);
+      harness.app.onGemInteracted();
+      expect(harness.app.stateMachine.state).toBe('FINAL');
     }
-
+    expect(harness.entered.filter(state => state === 'GEM_ACTIVATION')).toHaveLength(1);
+    expect(harness.app.gemSystem.gemBurst.active).toBe(false);
     expect(harness.app.petalSystem.mesh).toBe(mesh);
-    expect(
-      harness.app.scene.children.filter((child) => child.isInstancedMesh),
-    ).toEqual([mesh]);
+    expect(harness.app.petalSystem.explosionCount).toBe(1);
     harness.app.dispose();
   });
 
@@ -289,14 +288,14 @@ describe('App core integration', () => {
     expect(harness.scheduler.size).toBe(0);
   });
 
-  it('transitions to GEM_BURST when gem is interacted with in GEM_IDLE without any sounds', () => {
+  it('transitions to GEM_ACTIVATION when gem is interacted with in GEM_IDLE without any sounds', () => {
     const harness = createHarness();
     harness.app.start();
     harness.app.stateMachine.transitionTo('GEM_IDLE');
 
     harness.app.onGemInteracted();
 
-    expect(harness.app.stateMachine.state).toBe('GEM_BURST');
+    expect(harness.app.stateMachine.state).toBe('GEM_ACTIVATION');
     harness.app.dispose();
   });
 });

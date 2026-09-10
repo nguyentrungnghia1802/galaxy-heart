@@ -1088,3 +1088,14 @@ Chỉ đánh dấu mục này khi B07 hoàn tất:
 
 
 
+
+## Music Reveal architecture — 2026-09-10 (supersedes the old LoveText ending)
+
+- [x] GEM_IDLE → GEM_ACTIVATION → MUSIC_REVEAL → FINAL, one-shot click/tap, no old text reveal or gem burst flash/sound.
+- [x] Independent heartbeatGain/musicGain with one shared AudioContext and one preloaded media element; empty production source.
+- [x] Data-driven HTML captions sampled from audio.currentTime, smooth fades, trim/volume/control configuration in src/config/musicReveal.js.
+- [x] Pause/resume/stop/disposal race regression tests and long-sequence petal continuity.
+- [x] Desktop/mobile Chromium emulation QA, 112 tests and production build PASS; physical-device/audio-file QA remains for the real track. Git delivery accompanies this change.
+
+Configuration and lifecycle details: [15-music-reveal.md](15-music-reveal.md).
+

@@ -488,3 +488,46 @@ canvas {
 
 
 
+
+/* HTML captions remain outside Three.js tone mapping and bloom. */
+.music-captions {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  pointer-events: none;
+}
+.music-caption {
+  grid-area: 1 / 1;
+  width: min(100%, 42rem);
+  margin: 0;
+  color: #f6e8e5;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(18px, 2.2vw, 28px);
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: 0.025em;
+  text-align: center;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+  text-shadow: 0 2px 8px rgba(16, 3, 8, 0.75);
+  opacity: 0;
+}
+.music-resume {
+  position: fixed;
+  z-index: 5;
+  bottom: max(32px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 18px;
+  border: 1px solid #af8589;
+  border-radius: 24px;
+  background: #210d16;
+  color: #f6e8e5;
+  font: 16px Georgia, serif;
+  cursor: pointer;
+}
+.music-resume[hidden] { display: none; }

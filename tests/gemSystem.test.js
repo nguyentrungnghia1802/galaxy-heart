@@ -81,6 +81,23 @@ describe('GemSystem', () => {
     gem.dispose();
   });
 
+  it('waits three idle seconds before exposing the interaction hint', () => {
+    const gem = new GemSystem({ hintDelay: 3 });
+
+    gem.update(2.999, { state: 'GEM_IDLE' });
+    expect(gem.interactionHintVisible).toBe(false);
+
+    gem.update(0.001, { state: 'GEM_IDLE' });
+    expect(gem.interactionHintVisible).toBe(true);
+
+    gem.update(0.016, { state: 'GEM_ACTIVATION', progress: 0.01 });
+    expect(gem.interactionHintVisible).toBe(false);
+
+    gem.reset();
+    expect(gem.interactionHintVisible).toBe(false);
+    gem.dispose();
+  });
+
   it('disappears after activation and remains invisible in MUSIC_REVEAL and FINAL', () => {
     const gem = new GemSystem();
 

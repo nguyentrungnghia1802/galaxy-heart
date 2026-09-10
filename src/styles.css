@@ -531,3 +531,92 @@ canvas {
   cursor: pointer;
 }
 .music-resume[hidden] { display: none; }
+
+/* Small, low-contrast interaction cue shown only after the gem has had time to breathe. */
+.gem-interaction-hint {
+  --gem-hint-offset-x: 32px;
+  --gem-hint-offset-y: -34px;
+  --gem-hint-x: 0px;
+  --gem-hint-y: 0px;
+  position: absolute;
+  z-index: 3;
+  width: 38px;
+  height: 38px;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  transform: translate3d(
+    calc(var(--gem-hint-x) - 50% + var(--gem-hint-offset-x)),
+    calc(var(--gem-hint-y) - 50% + var(--gem-hint-offset-y)),
+    0
+  );
+  will-change: transform, opacity;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 260ms ease, visibility 0s linear 260ms;
+}
+
+.gem-interaction-hint.is-visible {
+  opacity: 0.78;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.gem-interaction-hint.is-dismissed {
+  opacity: 0;
+  visibility: hidden;
+  transition: none;
+}
+
+.gem-interaction-hint__icon {
+  position: relative;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  fill: #f1d9df;
+  filter: drop-shadow(0 2px 6px rgba(31, 2, 11, 0.75));
+  animation: gem-hint-tap 2.4s ease-in-out infinite;
+}
+
+.gem-interaction-hint__ripple {
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(239, 174, 191, 0.58);
+  border-radius: 50%;
+  animation: gem-hint-ripple 2.4s ease-out infinite;
+}
+
+@keyframes gem-hint-tap {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  18% { transform: translate(2px, 2px) scale(0.92); }
+  34% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes gem-hint-ripple {
+  0%, 24% { opacity: 0; transform: scale(0.72); }
+  38% { opacity: 0.42; }
+  78%, 100% { opacity: 0; transform: scale(1.7); }
+}
+
+@media (max-width: 480px) {
+  .gem-interaction-hint {
+    --gem-hint-offset-x: 27px;
+    --gem-hint-offset-y: -29px;
+    width: 34px;
+    height: 34px;
+  }
+
+  .gem-interaction-hint__icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gem-interaction-hint__icon,
+  .gem-interaction-hint__ripple {
+    animation-duration: 4.8s;
+  }
+}

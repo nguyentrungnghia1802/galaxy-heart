@@ -365,7 +365,7 @@ export class SoundSystem {
         this.explosionTriggered = true;
       }
     } else {
-      // In all other states (PETAL_FLIGHT, GEM_IDLE, GEM_BURST, LOVE_REVEAL, END, etc.), strictly silent
+      // In all other states (PETAL_FLIGHT, GEM_IDLE, GEM_ACTIVATION, MUSIC_REVEAL, FINAL, etc.), strictly silent
       this.lastHeartbeatPhase = -1;
       this.lubTriggered = false;
       this.dubTriggered = false;

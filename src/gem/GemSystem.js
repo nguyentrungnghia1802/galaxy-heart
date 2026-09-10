@@ -32,10 +32,15 @@ export class GemSystem {
     this.group.position.copy(this.basePosition);
 
     this.activation = options.activation ?? MUSIC_REVEAL_CONFIG.activation;
+    this.hintDelay = options.hintDelay ?? MUSIC_REVEAL_CONFIG.gemHint.delay;
+    if (!Number.isFinite(this.hintDelay) || this.hintDelay <= 0) {
+      throw new Error('Gem hint delay must be positive.');
+    }
     this.hoverFactor = 0;
     this.isHovered = false;
     this.time = 0;
     this.idleTime = 0;
+    this.interactionHintVisible = false;
     this.burstFlash = 0;
 
     // 1. Inner Crystal Core (Deep ruby octahedron, non-glowing interior depth)
@@ -195,6 +200,7 @@ export class GemSystem {
       this.orbitPoints.visible = false;
       this.hitMesh.visible = false;
       this.gemLight.intensity = 0;
+      this.interactionHintVisible = false;
       return;
     }
 
@@ -207,6 +213,7 @@ export class GemSystem {
       this.orbitPoints.visible = false;
       this.hitMesh.visible = false;
       this.gemLight.intensity = 0;
+      this.interactionHintVisible = false;
       this.gemBurst.update(dt);
       return;
     }
@@ -295,6 +302,7 @@ export class GemSystem {
     // 5. Beckoning Ripple Cue (Only during GEM_IDLE when user needs to tap, subtle and soft)
     if (state === 'GEM_IDLE') {
       this.idleTime += dt;
+      this.interactionHintVisible = this.idleTime >= this.hintDelay;
       const ripplePeriod = 2.4;
       const ripplePhase = (this.idleTime % ripplePeriod) / ripplePeriod;
       const rippleScale = lerp(0.8, 1.8, Math.pow(ripplePhase, 0.5));
@@ -302,6 +310,7 @@ export class GemSystem {
       this.rippleMat.opacity = Math.sin(ripplePhase * Math.PI) * 0.12;
       this.rippleMesh.visible = true;
     } else {
+      this.interactionHintVisible = false;
       this.rippleMesh.visible = false;
     }
 
@@ -334,6 +343,7 @@ export class GemSystem {
     this.isHovered = false;
     this.time = 0;
     this.idleTime = 0;
+    this.interactionHintVisible = false;
     this.burstFlash = 0;
     this.group.position.copy(this.basePosition);
     this.outerMesh.rotation.set(0, 0, 0);

@@ -38,6 +38,12 @@ export class MusicSystem {
   }
 
   get currentTime() { return this.audio?.currentTime ?? 0; }
+  get duration() {
+    const d = this.audio?.duration;
+    if (Number.isFinite(d) && d > 0) return d;
+    if (Number.isFinite(this.config.endTime) && this.config.endTime > 0) return this.config.endTime;
+    return 24.25;
+  }
   get finished() { return ['finished', 'error', 'disposed'].includes(this.status); }
 
   connect() {

@@ -821,3 +821,16 @@ canvas {
     animation-duration: 4.8s;
   }
 }
+/* Fullscreen cinematic ending overlay that smoothly fades entire web & scene to pitch black */
+.cinematic-ending-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000000;
+  opacity: 0;
+  z-index: 100;
+  pointer-events: none;
+  touch-action: none;
+  will-change: opacity;
+}

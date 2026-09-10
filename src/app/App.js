@@ -15,6 +15,7 @@ import { RendererSystem } from '../scene/RendererSystem.js';
 import { VisibilityClock } from '../utils/visibility.js';
 import { QualityManager, readBrowserCapabilities } from './QualityManager.js';
 import { StateMachine } from './StateMachine.js';
+import { clamp } from '../utils/math.js';
 
 export class App {
   constructor(container, options = {}) {
@@ -136,6 +137,21 @@ export class App {
       this.musicResumeButton.hidden = true;
       this.musicResumeButton.addEventListener('click', this.handleMusicResume);
       container.append(this.musicResumeButton);
+    }
+
+    this.endingConfig = this.musicConfig.ending ?? {
+      fadeDuration: 3.65,
+      captionEnd: 23.95,
+      musicEnd: 24.25,
+    };
+    this.endingOverlay = this.documentTarget?.createElement?.('div');
+    if (this.endingOverlay) {
+      this.endingOverlay.className = 'cinematic-ending-overlay';
+      this.endingOverlay.setAttribute('aria-hidden', 'true');
+      this.endingOverlay.style.opacity = '0';
+      this.endingOverlay.style.display = 'none';
+      this.endingOverlay.style.pointerEvents = 'none';
+      container.append?.(this.endingOverlay);
     }
 
     this.raycaster = new THREE.Raycaster();
@@ -308,6 +324,7 @@ export class App {
       ['playing', 'paused'].includes(this.musicSystem.status));
     if (this.musicResumeButton) this.musicResumeButton.hidden =
       this.stateMachine.state !== 'MUSIC_REVEAL' || this.musicSystem.status !== 'blocked';
+    this.updateEndingSequence();
     this.soundSystem?.update(dt, this.stateSnapshot, this.heartSystem);
     this.updatePlaceholderSystems(dt);
     if (this.postProcessing?.enabled) {
@@ -323,6 +340,78 @@ export class App {
       return;
     }
     this.scheduleFrame();
+  }
+
+  updateEndingSequence() {
+    const state = this.stateMachine.state;
+
+    if (state === 'FINAL') {
+      if (this.endingOverlay) {
+        this.endingOverlay.style.display = 'block';
+        this.endingOverlay.style.opacity = '1';
+        this.endingOverlay.style.pointerEvents = 'auto';
+      }
+      if (this.replayButton) {
+        this.replayButton.hidden = true;
+      }
+      return;
+    }
+
+    if (state !== 'MUSIC_REVEAL') {
+      if (this.endingOverlay && this.endingOverlay.style.opacity !== '0') {
+        this.endingOverlay.style.opacity = '0';
+        this.endingOverlay.style.display = 'none';
+        this.endingOverlay.style.pointerEvents = 'none';
+      }
+      return;
+    }
+
+    const currentTime = this.musicSystem.currentTime;
+    const baseVolume = this.musicConfig.music?.volume ?? 0.7;
+    const musicEnd = this.endingConfig.musicEnd ?? 24.25;
+    const captionEnd = this.endingConfig.captionEnd ?? 23.95;
+    const fadeDuration = this.endingConfig.fadeDuration ?? 3.65;
+    const fadeStart = Math.max(0, musicEnd - fadeDuration);
+
+    if (currentTime < fadeStart) {
+      if (this.endingOverlay && this.endingOverlay.style.opacity !== '0') {
+        this.endingOverlay.style.opacity = '0';
+        this.endingOverlay.style.display = 'none';
+        this.endingOverlay.style.pointerEvents = 'none';
+      }
+      return;
+    }
+
+    // 1. Visual Fade: begins at fadeStart (~20.60s) and reaches pure black (1.0) at captionEnd (~23.95s)
+    const visualSpan = Math.max(0.1, captionEnd - fadeStart);
+    const visualProgress = clamp((currentTime - fadeStart) / visualSpan, 0, 1);
+    // Smooth power curve keeps the last caption easily readable while gently darkening scene
+    const visualOpacity = Math.pow(visualProgress, 1.8);
+
+    if (this.endingOverlay) {
+      this.endingOverlay.style.display = 'block';
+      this.endingOverlay.style.opacity = visualOpacity >= 0.999 ? '1' : visualOpacity.toFixed(4);
+      if (visualOpacity >= 0.99) {
+        this.endingOverlay.style.pointerEvents = 'auto';
+      }
+    }
+
+    // 2. Audio Volume Fade: begins at fadeStart (~20.60s) and reaches 0.0 at musicEnd (~24.25s)
+    const audioSpan = Math.max(0.1, musicEnd - fadeStart);
+    const musicProgress = clamp((currentTime - fadeStart) / audioSpan, 0, 1);
+    // Smooth cosine fade: zero derivative at start (no abrupt dip) and reaches zero smoothly
+    const volumeFactor = Math.cos(musicProgress * Math.PI * 0.5);
+    const targetVolume = baseVolume * Math.max(0, volumeFactor);
+
+    if (this.musicSystem.status === 'playing') {
+      this.musicSystem.fadeTo(targetVolume, 0.06);
+    }
+
+    // When reaching musicEnd, trigger clean stop and transition to FINAL
+    if (currentTime >= musicEnd) {
+      this.musicSystem.stop();
+      this.stateMachine.completeMusic();
+    }
   }
 
   updatePlaceholderSystems(dt = 0.016) {
@@ -405,6 +494,16 @@ export class App {
       this.gemSystem?.setHovered(false);
     }
     if (state === 'MUSIC_REVEAL') this.musicSystem.begin();
+    if (state === 'FINAL') {
+      if (this.endingOverlay) {
+        this.endingOverlay.style.display = 'block';
+        this.endingOverlay.style.opacity = '1';
+        this.endingOverlay.style.pointerEvents = 'auto';
+      }
+      if (this.replayButton) {
+        this.replayButton.hidden = true;
+      }
+    }
     this.onStateEnter?.(state, previousState);
   }
 
@@ -449,6 +548,11 @@ export class App {
     if (this.replayButton) {
       this.replayButton.hidden = true;
     }
+    if (this.endingOverlay) {
+      this.endingOverlay.style.opacity = '0';
+      this.endingOverlay.style.display = 'none';
+      this.endingOverlay.style.pointerEvents = 'none';
+    }
     this.heartSystem.reset();
     this.petalSystem.reset();
     this.gemSystem?.reset();
@@ -491,6 +595,7 @@ export class App {
     this.gemHint?.dispose();
     this.musicResumeButton?.removeEventListener('click', this.handleMusicResume);
     this.musicResumeButton?.remove();
+    this.endingOverlay?.remove?.();
     this.captionRenderer.dispose();
     this.musicSystem.dispose();
     this.soundSystem?.dispose();

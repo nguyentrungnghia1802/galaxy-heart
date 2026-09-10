@@ -35,7 +35,7 @@ export const CAPTION_TIMELINE = [
   { time: 18.15, text: 'oh~', section: 4, hold: 0.85 },
   { time: 19.35, text: 'I love you so much', section: 4 },
   { time: 21.05, text: 'Forever', section: 4, hold: 0.85 },
-  { time: 22.30, text: 'you and I', section: 4 },
+  { time: 22.30, text: 'you and I', section: 4, hold: 1.05 },
 ];
 
 export const CAPTION_ANIMATION = Object.freeze({
